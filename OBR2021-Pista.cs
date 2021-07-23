@@ -13,8 +13,10 @@ Issues      :
                 conflito desvio verde com recuperação de linha
                 adicionar ultrassom
                 lidar rampas
-                lidar com luzes 
-
+                lidar com (calibrar) luzes
+                lidar com velocidade x tempo  (deixar de permitir editar pra cada função)
+                resolver desvio 90º que está por tempo
+                rever lógica de detecção de giros 90º
 
                 Recuperar linhas usando função seno ok
                 Testar para curvas de 90º ok
@@ -168,7 +170,7 @@ void seguirLinhaPID (float velocidade, float kp, float ki,float kd){
 void Curva90(int velocidadeFrontal, int velocidadeGiro, int curva, float claro = 25){
     
     bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
-    bc.Wait(450);
+    bc.Wait(500);
 
     bc.MoveFrontal(0, 0);
     bc.Wait(100);
@@ -243,7 +245,7 @@ void Curva90(int velocidadeFrontal, int velocidadeGiro, int curva, float claro =
 void Verde(int velocidadeFrontal, int velocidadeGiro, int curva){
     
     bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
-    bc.Wait(1350);
+    bc.Wait(1550);
 
     bc.MoveFrontal(0, 0);
     bc.Wait(100);
@@ -287,9 +289,41 @@ void Verde(int velocidadeFrontal, int velocidadeGiro, int curva){
     bc.Wait(100);
 }
 
+void DesvioUltrassom(int velocidadeFrontal, int velocidadeGiro){                        //Definindo a função de giro
+    
+  RetornarCirculo(-88,velocidadeGiro);
+  bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
+  bc.Wait(2200);
+
+  RetornarCirculo(88,velocidadeGiro);
+  bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
+  bc.Wait(5200);
+
+  RetornarCirculo(88,velocidadeGiro);
+
+
+  while(bc.Lightness(1) > 20 && bc.Lightness(2) > 20 && bc.Lightness(3) > 20){
+    if(bc.Distance(1)<22){
+        
+        bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
+        bc.Wait(2500);
+
+        // Curva
+        RetornarCirculo(88, velocidadeGiro);
+        }
+        else{
+            bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
+            Tick();
+        }
+    }
+    bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
+    bc.Wait(1500);
+    RetornarCirculo(-88, velocidadeGiro);
+}
+
 // ====== Variáveis Específicas (A serem calibradas) ====== //
-float claro = 35, escuro = 25; 
-int velocidadeFrontal = 110, velocidadeGiro = 850;
+float claro = 60, escuro = 35; 
+int velocidadeFrontal = 100, velocidadeGiro = 850;
 
 void Main(){
     bc.PrintConsole(1, "== BEM VINDO KIM ===");
@@ -297,18 +331,35 @@ void Main(){
     while(true){
 
         // --- Desvio do Verde ---
-        if(bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN")  Verde(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 1);  // verde esquerda
-        if(bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN")  Verde(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 2);  // verde direita
-        if((bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN") && (bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN"))  Verde(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 3);  // verde dos dois lados
+        if(bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN")  
+        Verde(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 1);  // verde esquerda
+        
+        if(bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN")  
+        Verde(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 2);  // verde direita
+        
+        if((bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN") && (bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN"))  
+        Verde(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 3);  // verde dos dois lados
 
         // --- Curva 90º ---
-        if((bc.Lightness(0) < escuro && bc.Lightness(1) < escuro) || (bc.Lightness(1) < escuro && bc.Lightness(2) < escuro)) Curva90(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 2, claro);  // curva esquerda
+        if((bc.Lightness(0) < escuro && bc.Lightness(1) < escuro)) 
+        Curva90(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 2, claro);  // curva esquerda
         
-        if((bc.Lightness(2) < escuro && bc.Lightness(3) < escuro) || (bc.Lightness(3) < escuro && bc.Lightness(4) < escuro)) Curva90(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 1, claro);  // curva direita
+        if((bc.Lightness(3) < escuro && bc.Lightness(4) < escuro)) 
+        Curva90(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 1, claro);  // curva direita
+        
+        // --- Desvio Objeto ---
+        if(bc.Distance(2)<=15f){                        //Função para detectar o obstáculo utilizando o sensor de ultrassom
+            bc.MoveFrontal(0,0);
+            bc.Wait(100);
+            DesvioUltrassom(velocidadeFrontal, velocidadeGiro);                      //Aplicando a função definida
+        }
 
         // --- Recuperar Linha ---
-        if(bc.Lightness(1) < claro || bc.Lightness(2) < claro || bc.Lightness(3) < claro) controleTempo = 0;
-        if(bc.Lightness(1) > claro && bc.Lightness(2) > claro && bc.Lightness(3) > claro) RecuperarLinha(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro);
+        if(bc.Lightness(1) < claro || bc.Lightness(2) < claro || bc.Lightness(3) < claro)
+        controleTempo = 0;
+
+        else if(bc.Lightness(1) > claro && bc.Lightness(2) > claro && bc.Lightness(3) > claro) 
+        RecuperarLinha(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro);
 
         // --- Seguidor de Linha --- 
         
@@ -318,7 +369,7 @@ void Main(){
         //150, 20, 1, 5 = 1:16
         //200, 22, 1, 6 = 1:15
         // 200, 24, 0.1f, 10 = 1:20
-        seguirLinhaPID(velocidadeFrontal, 10, 0.5f, 5);
+        seguirLinhaPID(velocidadeFrontal, 25, 0, 6);
         
     }
 }
