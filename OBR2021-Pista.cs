@@ -100,6 +100,18 @@ void RetornarCirculo(float angulo, float velocidade){
         }
     }
 }
+
+float MatematicaCirculo(float angulo){
+    if(angulo > 360){
+        return angulo - 360;
+    }
+    else if(angulo < 360){
+        return angulo + 360;
+    }
+    else{
+        return angulo;
+    }
+}
 // ===============
 // Funções de pista
 // ===============
@@ -169,10 +181,23 @@ void Curva90(int velocidadeFrontal, int velocidadeGiro, int curva, float claro =
             
             bc.PrintConsole(1, "Virando Esquerda");
 
-            while(bc.Lightness(2) > claro){
+            float tempoAnterior = bc.Timer();
 
+            while(bc.Lightness(2) > claro){
+                
                 bc.MoveFrontal(velocidadeGiro, -velocidadeGiro);
                 Tick();
+
+                if(bc.Timer() > tempoAnterior+5000){
+
+                    tempoAnterior = bc.Timer();
+        
+                    while(bc.Timer() < tempoAnterior+2400){
+                        bc.MoveFrontal(-velocidadeGiro, velocidadeGiro);
+                        Tick();
+                    }
+                    break;
+                }
             }
         }
     }
@@ -186,10 +211,24 @@ void Curva90(int velocidadeFrontal, int velocidadeGiro, int curva, float claro =
             
             bc.PrintConsole(1, "Virando Direita");
 
+            float tempoAnterior = bc.Timer();
+
             while(bc.Lightness(2) > claro){
                 
                 bc.MoveFrontal(-velocidadeGiro, velocidadeGiro);
                 Tick();
+
+                
+                if(bc.Timer() > tempoAnterior+5000){
+                    
+                    tempoAnterior = bc.Timer();
+                    
+                    while(bc.Timer() < tempoAnterior+2400){
+                        bc.MoveFrontal(+velocidadeGiro, -velocidadeGiro);
+                        Tick();
+                    }
+                    break;
+                }
             }
         }
     }
@@ -250,7 +289,7 @@ void Verde(int velocidadeFrontal, int velocidadeGiro, int curva){
 
 // ====== Variáveis Específicas (A serem calibradas) ====== //
 float claro = 35, escuro = 25; 
-int velocidadeFrontal = 140, velocidadeGiro = 900;
+int velocidadeFrontal = 110, velocidadeGiro = 850;
 
 void Main(){
     bc.PrintConsole(1, "== BEM VINDO KIM ===");
@@ -264,6 +303,7 @@ void Main(){
 
         // --- Curva 90º ---
         if((bc.Lightness(0) < escuro && bc.Lightness(1) < escuro) || (bc.Lightness(1) < escuro && bc.Lightness(2) < escuro)) Curva90(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 2, claro);  // curva esquerda
+        
         if((bc.Lightness(2) < escuro && bc.Lightness(3) < escuro) || (bc.Lightness(3) < escuro && bc.Lightness(4) < escuro)) Curva90(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 1, claro);  // curva direita
 
         // --- Recuperar Linha ---
