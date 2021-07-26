@@ -27,7 +27,7 @@ bool pararIntegro;
 
 // ====== Variáveis Gerais ====== //
 // - Recuperação de linha
-int controleTempo = 0, tempoInicial = 0, anguloInicial = 0;
+int controleTempo = 0, tempoInicial = 0, anguloInicialLinha = 0;
 
 // ===============
 // Funções de suporte
@@ -52,24 +52,26 @@ int AproximarAngulo(){
 // negativo para sentido anti-horário
 // Margem de erro > 5º
 // Máximo de movimento em uma direção = 355
-void RetornarCirculo(float angulo, float velocidade){
+void RetornarCirculo(float anguloMovimento, float velocidade){
     float anguloInicial = bc.Compass();
-    
+
     // Movimento positivo - sentido horário
-    if(angulo > 0){
+    if(anguloMovimento > 0){
         // Alterando os valores para evitar o loop infinito em 360º/0º
-        if(anguloInicial + angulo > 358 && anguloInicial + angulo < 362){ anguloInicial += 5; }   
+        if(anguloInicial + anguloMovimento == 359) anguloInicial += -1;
+        if(anguloInicial + anguloMovimento == 360) anguloInicial += 2; 
+        if(anguloInicial + anguloMovimento == 361) anguloInicial += 1;   
 
         // Movimento passa pelo limite de 0/360º
-        if(anguloInicial + angulo > 360){
-            while(bc.Compass() > anguloInicial + angulo - 355 || bc.Compass() < anguloInicial + angulo - 360){
+        if(anguloInicial + anguloMovimento > 360){
+            while(bc.Compass() > anguloInicial + anguloMovimento - 355 || bc.Compass() < anguloInicial + anguloMovimento - 360){
                 bc.MoveFrontal(-velocidade, velocidade);
                 Tick();
             }
         }
         // Movimento regular
         else{
-            while(bc.Compass() < anguloInicial + angulo){
+            while(bc.Compass() < anguloInicial + anguloMovimento){
                 bc.MoveFrontal(-velocidade, velocidade);
                 Tick();
             }
@@ -77,21 +79,23 @@ void RetornarCirculo(float angulo, float velocidade){
     }
     else{
         // Invertendo o sinal do ângulo pra facilitar a visualização da matemática
-        angulo = angulo * -1;
+        anguloMovimento = anguloMovimento * -1;
 
         // Alterando os valores para evitar o loop infinito em 360º/0º
-        if(anguloInicial - angulo > -2 && anguloInicial - angulo < 2){ anguloInicial = anguloInicial - 5; }
+        if(anguloInicial - anguloMovimento == -1) anguloInicial += -1;
+        if(anguloInicial - anguloMovimento == 0) anguloInicial += -2; 
+        if(anguloInicial - anguloMovimento == 1) anguloInicial += 1;
 
         // Movimento passa pelo limite de 0/360º
-        if(anguloInicial < angulo){
-            while(bc.Compass() < anguloInicial + 355 - angulo || bc.Compass() > anguloInicial + 360 - angulo){
+        if(anguloInicial < anguloMovimento){
+            while(bc.Compass() < anguloInicial + 355 - anguloMovimento || bc.Compass() > anguloInicial + 360 - anguloMovimento){
                 bc.MoveFrontal(velocidade, -velocidade);
                 Tick();
             }
         }
         //Movimento regular
         else{
-            while(bc.Compass() > anguloInicial - angulo){
+            while(bc.Compass() > anguloInicial - anguloMovimento){
                 bc.MoveFrontal(velocidade, -velocidade);
                 Tick();
             }
@@ -125,7 +129,7 @@ void RecuperarLinha(int velocidadeFrontal, int velocidadeGiro){
     if(controleTempo == 0){
         controleTempo = 1;
         tempoInicial = bc.Timer();
-        anguloInicial = AproximarAngulo();
+        anguloInicialLinha = AproximarAngulo();
     }
 
     else if(tempoInicial + 2000 < bc.Timer()){
@@ -133,7 +137,7 @@ void RecuperarLinha(int velocidadeFrontal, int velocidadeGiro){
 
         bc.MoveFrontal(-velocidadeFrontal, -velocidadeFrontal);
         bc.Wait(1500);
-        RetornarCirculo(anguloInicial - bc.Compass(), velocidadeGiro);
+        RetornarCirculo(anguloInicialLinha - bc.Compass(), velocidadeGiro);
         controleTempo = 0;
     }
 }
@@ -159,7 +163,7 @@ void seguirLinhaPID (float velocidade, float kp, float ki,float kd){
     // Console
     bc.PrintConsole(0, "Error: "+ error.ToString("F") + " M: " + movimento.ToString());
     bc.PrintConsole(1, "Derivate: " + derivate.ToString("F"));
-    // bc.PrintConsole(2, "Integral: " + integral.ToString() + " Integro Parado: " + pararIntegro.ToString());
+    bc.PrintConsole(2, "Integral: " + integral.ToString() + " Integro Parado: " + pararIntegro.ToString());
 
     // Movimento
     bc.MoveFrontal(velocidade + movimento, velocidade - movimento);
@@ -169,7 +173,7 @@ void seguirLinhaPID (float velocidade, float kp, float ki,float kd){
     lastError = error;
 }
 
-void Curva90(int curva, float claro = 25){
+void Curva90(string curva, float claro = 25){
 
     int velocidadeFrontal = 150, velocidadeGiro = 800;
     
@@ -296,37 +300,36 @@ void Verde(string curva){
 }
 
 void DesvioUltrassom(){
-    int velocidadeFrontal = 150, velocidadeGiro = 800;                          
+    int velocidadeFrontal = 150, velocidadeGiro = 1000;                          
     
-    RetornarCirculo(-88,velocidadeGiro);
+    RetornarCirculo(-90, velocidadeGiro);
+
     bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
-    bc.Wait(2200);
+    bc.Wait(1500);
 
-    RetornarCirculo(88,velocidadeGiro);
-    bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
-    bc.Wait(5200);
+    RetornarCirculo(90, velocidadeGiro);
 
-    RetornarCirculo(88,velocidadeGiro);
-
-
-    while(MedirLuz(1) > 20 && MedirLuz(2) > 20 && MedirLuz(3) > 20){
-        if(bc.Distance(1)<22){
+    while(MedirLuz(1) > escuro && MedirLuz(2) > escuro && MedirLuz(3) > escuro){
+        if(bc.Distance(1) < 25){
+            bc.PrintConsole(2, "Bloco detectado a direita");
             
             bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
-            bc.Wait(2500);
+            bc.Wait(1850);
 
             // Curva
-            RetornarCirculo(88, velocidadeGiro);
-            }
-            else{
-                bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
-                Tick();
-            }
+            RetornarCirculo(90, velocidadeGiro);
+        }
+        else{
+            bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
+            Tick();
+        }
     }
+    
+    bc.PrintConsole(2, "Linha detectada");
 
     bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
-    bc.Wait(1500);
-    RetornarCirculo(-88, velocidadeGiro);
+    bc.Wait(780);
+    RetornarCirculo(-90, velocidadeGiro);
 }
 
 // ====== Variáveis Específicas (A serem calibradas) ====== //
@@ -344,7 +347,7 @@ void Main(){
 
     while(estagio == "Pista"){
 
-        bc.PrintConsole(2, "1: " + MedirLuz(0).ToString("F") + " 2: " + MedirLuz(1).ToString("F") + " 3: " + MedirLuz(2).ToString("F") + " 4: " + MedirLuz(3).ToString("F") + " 5: " + MedirLuz(4).ToString("F"));
+        // bc.PrintConsole(2, "1: " + MedirLuz(0).ToString("F") + " 2: " + MedirLuz(1).ToString("F") + " 3: " + MedirLuz(2).ToString("F") + " 4: " + MedirLuz(3).ToString("F") + " 5: " + MedirLuz(4).ToString("F"));
 
         // --- Desvio do Verde ---
         if(bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN")  
@@ -358,11 +361,11 @@ void Main(){
 
         // --- Curva 90º ---
         if((MedirLuz(0) < escuro && MedirLuz(1) < escuro)) 
-        Curva90("Esquerda", claro);  // curva esquerda
+        Curva90("Direita", claro);
         
         if((MedirLuz(3) < escuro && MedirLuz(4) < escuro)) 
-        Curva90("Direita", claro);  // curva direita
-        
+        Curva90("Esquerda", claro);
+
         // --- Desvio Objeto ---
         if(bc.Distance(2)<=15f){                        //Função para detectar o obstáculo utilizando o sensor de ultrassom
             bc.MoveFrontal(0,0);
