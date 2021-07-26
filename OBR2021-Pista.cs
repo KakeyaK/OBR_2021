@@ -1,17 +1,10 @@
 /*
-Título      :   Pista OBR (sem rampa e obstáculo)
+Título      :   Pista OBR
 
 Autor       :   Kim
 
-Versão      :   
-                0.3 Função de recuperar linha
-                0.2.1 Calibração das funções
-                0.2 Função de retornar círculo
-                0.1 (funcionalidades inciais)
-
 Issues      :   
                 conflito desvio verde com recuperação de linha
-                adicionar ultrassom
                 lidar rampas
                 lidar com (calibrar) luzes
                 lidar com velocidade x tempo  (deixar de permitir editar pra cada função)
@@ -42,6 +35,8 @@ int controleTempo = 0, tempoInicial = 0, anguloInicial = 0;
 
 // ====== Função de Passar Tempo ====== //
 void Tick(){ bc.Wait(30); } 
+
+// ====== Funções de Matemática com Ângulos ====== //
 
 // Retornar aproximação de ângulo para um dos pontos cardeais
 int AproximarAngulo(){
@@ -83,6 +78,7 @@ void RetornarCirculo(float angulo, float velocidade){
     else{
         // Invertendo o sinal do ângulo pra facilitar a visualização da matemática
         angulo = angulo * -1;
+
         // Alterando os valores para evitar o loop infinito em 360º/0º
         if(anguloInicial - angulo > -2 && anguloInicial - angulo < 2){ anguloInicial = anguloInicial - 5; }
 
@@ -114,8 +110,14 @@ float MatematicaCirculo(float angulo){
         return angulo;
     }
 }
+
+// ====== Funções luz ===== //
+float MedirLuz(int sensor){
+    return (100*bc.Lightness(sensor)/maxClaro) ;
+}
+
 // ===============
-// Funções de pista
+// Funções da pista
 // ===============
 
 void RecuperarLinha(int velocidadeFrontal, int velocidadeGiro){
@@ -138,7 +140,7 @@ void RecuperarLinha(int velocidadeFrontal, int velocidadeGiro){
 
 void seguirLinhaPID (float velocidade, float kp, float ki,float kd){
     // matemática PID
-    error = bc.Lightness(1) - bc.Lightness(3);
+    error = MedirLuz(1) - MedirLuz(3);
     integral += error;
     derivate = error - lastError;
     
@@ -157,7 +159,7 @@ void seguirLinhaPID (float velocidade, float kp, float ki,float kd){
     // Console
     bc.PrintConsole(0, "Error: "+ error.ToString("F") + " M: " + movimento.ToString());
     bc.PrintConsole(1, "Derivate: " + derivate.ToString("F"));
-    bc.PrintConsole(2, "Integral: " + integral.ToString() + " Integro Parado: " + pararIntegro.ToString());
+    // bc.PrintConsole(2, "Integral: " + integral.ToString() + " Integro Parado: " + pararIntegro.ToString());
 
     // Movimento
     bc.MoveFrontal(velocidade + movimento, velocidade - movimento);
@@ -179,13 +181,13 @@ void Curva90(int velocidadeFrontal, int velocidadeGiro, int curva, float claro =
     if( curva == 1 ){
 
         // detectar se é curva ou interseção e virar caso necessário
-        if( bc.Lightness(1) > claro && bc.Lightness(2) > claro && bc.Lightness(3) > claro ){
+        if( MedirLuz(1) > claro && MedirLuz(2) > claro && MedirLuz(3) > claro ){
             
             bc.PrintConsole(1, "Virando Esquerda");
 
             float tempoAnterior = bc.Timer();
 
-            while(bc.Lightness(2) > claro){
+            while(MedirLuz(2) > claro){
                 
                 bc.MoveFrontal(velocidadeGiro, -velocidadeGiro);
                 Tick();
@@ -209,13 +211,13 @@ void Curva90(int velocidadeFrontal, int velocidadeGiro, int curva, float claro =
         bc.PrintConsole(1, "Curva Direita!");
         
         // detectar se é curva ou interseção e virar caso necessário
-        if( bc.Lightness(1) > claro && bc.Lightness(2) > claro && bc.Lightness(3) > claro ){
+        if( MedirLuz(1) > claro && MedirLuz(2) > claro && MedirLuz(3) > claro ){
             
             bc.PrintConsole(1, "Virando Direita");
 
             float tempoAnterior = bc.Timer();
 
-            while(bc.Lightness(2) > claro){
+            while(MedirLuz(2) > claro){
                 
                 bc.MoveFrontal(-velocidadeGiro, velocidadeGiro);
                 Tick();
@@ -256,7 +258,7 @@ void Verde(int velocidadeFrontal, int velocidadeGiro, int curva){
 
         RetornarCirculo(-10, velocidadeGiro);
 
-        while(bc.Lightness(2) > claro){
+        while(MedirLuz(2) > claro){
 
             bc.MoveFrontal(velocidadeGiro, -velocidadeGiro);
             Tick();
@@ -270,7 +272,7 @@ void Verde(int velocidadeFrontal, int velocidadeGiro, int curva){
 
         RetornarCirculo(10, velocidadeGiro);
 
-        while(bc.Lightness(2) > claro){
+        while(MedirLuz(2) > claro){
                 
             bc.MoveFrontal(-velocidadeGiro, velocidadeGiro);
             Tick();
@@ -302,7 +304,7 @@ void DesvioUltrassom(int velocidadeFrontal, int velocidadeGiro){                
   RetornarCirculo(88,velocidadeGiro);
 
 
-  while(bc.Lightness(1) > 20 && bc.Lightness(2) > 20 && bc.Lightness(3) > 20){
+  while(MedirLuz(1) > 20 && MedirLuz(2) > 20 && MedirLuz(3) > 20){
     if(bc.Distance(1)<22){
         
         bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
@@ -322,13 +324,17 @@ void DesvioUltrassom(int velocidadeFrontal, int velocidadeGiro){                
 }
 
 // ====== Variáveis Específicas (A serem calibradas) ====== //
-float claro = 60, escuro = 35; 
+float claro = 70, escuro = 40, maxClaro, maxEscuro; 
 int velocidadeFrontal = 100, velocidadeGiro = 850;
 
 void Main(){
     bc.PrintConsole(1, "== BEM VINDO KIM ===");
 
+    maxClaro = (bc.Lightness(0) + bc.Lightness(4)) / 2;
+    maxEscuro = bc.Lightness(2);
+
     while(true){
+        bc.PrintConsole(2, "1: " + MedirLuz(0).ToString("F") + " 2: " + MedirLuz(1).ToString("F") + " 3: " + MedirLuz(2).ToString("F") + " 4: " + MedirLuz(3).ToString("F") + " 5: " + MedirLuz(4).ToString("F"));
 
         // --- Desvio do Verde ---
         if(bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN")  
@@ -341,10 +347,10 @@ void Main(){
         Verde(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 3);  // verde dos dois lados
 
         // --- Curva 90º ---
-        if((bc.Lightness(0) < escuro && bc.Lightness(1) < escuro)) 
+        if((MedirLuz(0) < escuro && MedirLuz(1) < escuro)) 
         Curva90(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 2, claro);  // curva esquerda
         
-        if((bc.Lightness(3) < escuro && bc.Lightness(4) < escuro)) 
+        if((MedirLuz(3) < escuro && MedirLuz(4) < escuro)) 
         Curva90(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 1, claro);  // curva direita
         
         // --- Desvio Objeto ---
@@ -355,10 +361,10 @@ void Main(){
         }
 
         // --- Recuperar Linha ---
-        if(bc.Lightness(1) < claro || bc.Lightness(2) < claro || bc.Lightness(3) < claro)
+        if(MedirLuz(1) < claro || MedirLuz(2) < claro || MedirLuz(3) < claro)
         controleTempo = 0;
 
-        else if(bc.Lightness(1) > claro && bc.Lightness(2) > claro && bc.Lightness(3) > claro) 
+        else if(MedirLuz(1) > claro && MedirLuz(2) > claro && MedirLuz(3) > claro) 
         RecuperarLinha(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro);
 
         // --- Seguidor de Linha --- 
@@ -369,7 +375,7 @@ void Main(){
         //150, 20, 1, 5 = 1:16
         //200, 22, 1, 6 = 1:15
         // 200, 24, 0.1f, 10 = 1:20
-        seguirLinhaPID(velocidadeFrontal, 25, 0, 6);
+        seguirLinhaPID(velocidadeFrontal, 20, 0, 6);
         
     }
 }
