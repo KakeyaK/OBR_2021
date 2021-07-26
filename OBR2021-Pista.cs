@@ -169,7 +169,9 @@ void seguirLinhaPID (float velocidade, float kp, float ki,float kd){
     lastError = error;
 }
 
-void Curva90(int velocidadeFrontal, int velocidadeGiro, int curva, float claro = 25){
+void Curva90(int curva, float claro = 25){
+
+    int velocidadeFrontal = 150, velocidadeGiro = 800;
     
     bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
     bc.Wait(500);
@@ -178,7 +180,7 @@ void Curva90(int velocidadeFrontal, int velocidadeGiro, int curva, float claro =
     bc.Wait(100);
 
     // desvio para esquerda
-    if( curva == 1 ){
+    if( curva == "Esquerda" ){
 
         // detectar se é curva ou interseção e virar caso necessário
         if( MedirLuz(1) > claro && MedirLuz(2) > claro && MedirLuz(3) > claro ){
@@ -207,7 +209,7 @@ void Curva90(int velocidadeFrontal, int velocidadeGiro, int curva, float claro =
     }
 
     //devio para direita
-    if( curva == 2 ){
+    if( curva == "Direita" ){
         bc.PrintConsole(1, "Curva Direita!");
         
         // detectar se é curva ou interseção e virar caso necessário
@@ -244,7 +246,9 @@ void Curva90(int velocidadeFrontal, int velocidadeGiro, int curva, float claro =
     bc.Wait(100);
 }
 
-void Verde(int velocidadeFrontal, int velocidadeGiro, int curva){
+void Verde(string curva){
+
+    int velocidadeFrontal = 150, velocidadeGiro = 800; 
     
     bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
     bc.Wait(1550);
@@ -252,7 +256,7 @@ void Verde(int velocidadeFrontal, int velocidadeGiro, int curva){
     bc.MoveFrontal(0, 0);
     bc.Wait(100);
 
-    if(curva == 1){
+    if(curva == "Esquerda"){
         
         bc.PrintConsole(1, "Verde Esquerda");
 
@@ -266,7 +270,7 @@ void Verde(int velocidadeFrontal, int velocidadeGiro, int curva){
 
         bc.PrintConsole(1, "");
     }
-    if(curva == 2){
+    if(curva == "Direita"){
         
         bc.PrintConsole(1, "Verde Direita");
 
@@ -280,7 +284,7 @@ void Verde(int velocidadeFrontal, int velocidadeGiro, int curva){
 
         bc.PrintConsole(1, "");
     }
-    if(curva == 3){
+    if(curva == "Ambos"){
         // Girar 180º
     }
 
@@ -291,33 +295,35 @@ void Verde(int velocidadeFrontal, int velocidadeGiro, int curva){
     bc.Wait(100);
 }
 
-void DesvioUltrassom(int velocidadeFrontal, int velocidadeGiro){                        //Definindo a função de giro
+void DesvioUltrassom(){
+    int velocidadeFrontal = 150, velocidadeGiro = 800;                          
     
-  RetornarCirculo(-88,velocidadeGiro);
-  bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
-  bc.Wait(2200);
+    RetornarCirculo(-88,velocidadeGiro);
+    bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
+    bc.Wait(2200);
 
-  RetornarCirculo(88,velocidadeGiro);
-  bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
-  bc.Wait(5200);
+    RetornarCirculo(88,velocidadeGiro);
+    bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
+    bc.Wait(5200);
 
-  RetornarCirculo(88,velocidadeGiro);
+    RetornarCirculo(88,velocidadeGiro);
 
 
-  while(MedirLuz(1) > 20 && MedirLuz(2) > 20 && MedirLuz(3) > 20){
-    if(bc.Distance(1)<22){
-        
-        bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
-        bc.Wait(2500);
+    while(MedirLuz(1) > 20 && MedirLuz(2) > 20 && MedirLuz(3) > 20){
+        if(bc.Distance(1)<22){
+            
+            bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
+            bc.Wait(2500);
 
-        // Curva
-        RetornarCirculo(88, velocidadeGiro);
-        }
-        else{
-            bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
-            Tick();
-        }
+            // Curva
+            RetornarCirculo(88, velocidadeGiro);
+            }
+            else{
+                bc.MoveFrontal(velocidadeFrontal,velocidadeFrontal);
+                Tick();
+            }
     }
+
     bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
     bc.Wait(1500);
     RetornarCirculo(-88, velocidadeGiro);
@@ -326,38 +332,42 @@ void DesvioUltrassom(int velocidadeFrontal, int velocidadeGiro){                
 // ====== Variáveis Específicas (A serem calibradas) ====== //
 float claro = 70, escuro = 40, maxClaro, maxEscuro; 
 int velocidadeFrontal = 100, velocidadeGiro = 850;
+string estagio = "Pista";
 
 void Main(){
     bc.PrintConsole(1, "== BEM VINDO KIM ===");
 
+    bc.Wait(1000);
+
     maxClaro = (bc.Lightness(0) + bc.Lightness(4)) / 2;
     maxEscuro = bc.Lightness(2);
 
-    while(true){
+    while(estagio == "Pista"){
+
         bc.PrintConsole(2, "1: " + MedirLuz(0).ToString("F") + " 2: " + MedirLuz(1).ToString("F") + " 3: " + MedirLuz(2).ToString("F") + " 4: " + MedirLuz(3).ToString("F") + " 5: " + MedirLuz(4).ToString("F"));
 
         // --- Desvio do Verde ---
         if(bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN")  
-        Verde(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 1);  // verde esquerda
+        Verde("Esquerda");  // verde esquerda
         
         if(bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN")  
-        Verde(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 2);  // verde direita
+        Verde("Direita");  // verde direita
         
         if((bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN") && (bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN"))  
-        Verde(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 3);  // verde dos dois lados
+        Verde("Ambos");  // verde dos dois lados
 
         // --- Curva 90º ---
         if((MedirLuz(0) < escuro && MedirLuz(1) < escuro)) 
-        Curva90(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 2, claro);  // curva esquerda
+        Curva90("Esquerda", claro);  // curva esquerda
         
         if((MedirLuz(3) < escuro && MedirLuz(4) < escuro)) 
-        Curva90(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro, 1, claro);  // curva direita
+        Curva90("Direita", claro);  // curva direita
         
         // --- Desvio Objeto ---
         if(bc.Distance(2)<=15f){                        //Função para detectar o obstáculo utilizando o sensor de ultrassom
             bc.MoveFrontal(0,0);
             bc.Wait(100);
-            DesvioUltrassom(velocidadeFrontal, velocidadeGiro);                      //Aplicando a função definida
+            DesvioUltrassom();                      //Aplicando a função definida
         }
 
         // --- Recuperar Linha ---
@@ -376,6 +386,5 @@ void Main(){
         //200, 22, 1, 6 = 1:15
         // 200, 24, 0.1f, 10 = 1:20
         seguirLinhaPID(velocidadeFrontal, 20, 0, 6);
-        
     }
 }
