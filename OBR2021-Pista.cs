@@ -23,10 +23,11 @@ bool pararIntegro;
 
 // ====== Variáveis Gerais ====== //
 // - Recuperação de linha
-int controleTempo = 0, tempoInicialLinha = 0, anguloInicialLinha = 0;
+int controleTempoRecuperarLinha = 0, tempoInicialLinha = 0, anguloInicialLinha = 0;
 
 // - Gangorra
-int tempoInicialGangorra = 0;
+int tempoInicialGangorra = 0, controleEstagioGangorra = 0;
+float controleAnguloGangorra = -1;
 
 // ===============
 // Funções de suporte
@@ -165,7 +166,7 @@ void seguirLinhaPID (float velocidade, float kp, float ki,float kd){
 
     // Console
     bc.PrintConsole(0, "Error: "+ error.ToString("F") + " M: " + movimento.ToString());
-    bc.PrintConsole(1, "Derivate: " + derivate.ToString("F"));
+    // bc.PrintConsole(1, "Derivate: " + derivate.ToString("F"));
     bc.PrintConsole(2, "Integral: " + integral.ToString() + " Integro Parado: " + pararIntegro.ToString());
 
     // Movimento
@@ -336,14 +337,34 @@ void DesvioUltrassom(){
 }
 
 void Gangorra(){
-    bc.PrintConsole(2, "Gangorra");
 
+    if(controleEstagioGangorra == 0){
+        bc.PrintConsole(1, "Plano Inclinado");
     tempoInicialGangorra = bc.Timer();
-    while(tempoInicialGangorra + 2600 > bc.Timer()){
-        seguirLinhaPID(200, 20, 0, 6);
+        controleEstagioGangorra = 1;
     }
+
+    else{
+
+        if(tempoInicialGangorra + 2200 < bc.Timer()){
+            while(bc.Inclination() > 300 || bc.Inclination() < 15){
+                
     bc.MoveFrontal(0, 0);
-    bc.Wait(4000);
+                bc.PrintConsole(1, "Estou parado");
+                
+                if(controleAnguloGangorra == bc.Inclination()){
+                    break;
+                }
+
+                controleAnguloGangorra = bc.Inclination();
+                
+                bc.Wait(200);
+            }
+            
+            controleEstagioGangorra = 0;
+        }
+
+    }
 }
 
 // ====== Variáveis Específicas (A serem calibradas) ====== //
@@ -360,7 +381,7 @@ void Main(){
 
     while(estagio == "Pista"){
 
-        bc.PrintConsole(2, "1: " + MedirLuz(0).ToString("F") + " 2: " + MedirLuz(1).ToString("F") + " 3: " + MedirLuz(2).ToString("F") + " 4: " + MedirLuz(3).ToString("F") + " 5: " + MedirLuz(4).ToString("F"));
+        // bc.PrintConsole(2, "1: " + MedirLuz(0).ToString("F") + " 2: " + MedirLuz(1).ToString("F") + " 3: " + MedirLuz(2).ToString("F") + " 4: " + MedirLuz(3).ToString("F") + " 5: " + MedirLuz(4).ToString("F"));
 
         // --- Desvio do Verde ---
         if(bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN"){  
@@ -389,12 +410,11 @@ void Main(){
         // --- Gangorra --- 
         if( (bc.Inclination() > 335 && bc.Inclination() < 350) && bc.Distance(1) > 40 ){
             Gangorra();
-            controleTempo = 0;  
         }
 
         // --- Recuperar Linha ---
         if(MedirLuz(1) < claro || MedirLuz(2) < claro || MedirLuz(3) < claro) {
-            controleTempo = 0;}
+            controleTempoRecuperarLinha = 0;}
 
         else if(MedirLuz(1) > claro && MedirLuz(2) > claro && MedirLuz(3) > claro){
             RecuperarLinha(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro);} 
