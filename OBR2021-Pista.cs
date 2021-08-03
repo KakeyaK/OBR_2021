@@ -120,6 +120,26 @@ float MedirLuz(int sensor){
     return bc.Lightness(sensor) ;
 }
 
+// ===== Posicionamento inicial garra ===== //
+
+//balde = 318, escavadora = 318
+
+void AjustarAnguloBalde(){
+    while( Math.Sin(bc.AngleScoop() * Math.PI / 180 ) > Math.Sin(318 * Math.PI / 180)){
+
+		bc.TurnActuatorDown(40);
+
+    }
+}
+
+void AjustarAlturaBalde(){
+    while( Math.Sin(bc.AngleActuator() * Math.PI / 180 ) > Math.Sin(318 * Math.PI / 180)){
+
+		bc.ActuatorUp(40);
+
+    }
+}
+
 // ===============
 // Funções da pista
 // ===============
@@ -445,6 +465,13 @@ int velocidadeFrontal = 150, velocidadeGiro = 850;
 
 void Main(){
     bc.PrintConsole(1, "== BEM VINDO KIM ===");
+
+    bc.ActuatorSpeed(150); 
+    Thread threadAlturaBalde = new Thread(AjustarAlturaBalde); 
+    // Thread threadAnguloGarra = new Thread(AjustarAnguloBalde);
+    
+    threadAlturaBalde.Start();
+    AjustarAnguloBalde();
 
     while(estagio == "Pista"){
 
