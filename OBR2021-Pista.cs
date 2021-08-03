@@ -124,24 +124,91 @@ float MedirLuz(int sensor){
 // Funções da pista
 // ===============
 
-void RecuperarLinha(int velocidadeFrontal, int velocidadeGiro){
+void RecuperarLinha(int velocidadeGiro){
 
-    if(controleTempo == 0){
-        controleTempo = 1;
+    if(controleTempoRecuperarLinha == 0){
+        controleTempoRecuperarLinha = 1;
         tempoInicialLinha = bc.Timer();
         anguloInicialLinha = AproximarAngulo();
     }
+    else if(controleTempoRecuperarLinha == 1){
 
-    else if(tempoInicialLinha + 2000 < bc.Timer()){
-        bc.MoveFrontal(0, 0);
-        Tick();
+        if(tempoInicialLinha + 2000 < bc.Timer()){
+            bc.MoveFrontal(0, 0);
+            Tick();
 
-        bc.PrintConsole(1, "Voltando na Linha");
+            bc.PrintConsole(1, "Voltando na Linha " + anguloInicialLinha.ToString());
 
-        bc.MoveFrontal(-velocidadeFrontal, -velocidadeFrontal);
-        bc.Wait(1500);
-        RetornarCirculo(anguloInicialLinha - bc.Compass(), velocidadeGiro);
-        controleTempo = 0;
+            int controleLuz = 0;
+
+            bc.MoveFrontal(-170, -170);
+            bc.Wait(800);
+            RetornarCirculo(anguloInicialLinha - bc.Compass(), velocidadeGiro);
+
+            if(MedirLuz(0) < claro || MedirLuz(1) < claro || MedirLuz(2) < claro || MedirLuz(3) < claro || MedirLuz(4) < claro) {
+                bc.PrintConsole(1, "Voltei" );
+                bc.MoveFrontal(0, 0);
+                Tick();
+            }
+            else{
+                for (int i = 0; i<3; i++){       
+                    bc.MoveFrontal(170, 170);
+                    bc.Wait(1350 + 100 * i);
+                
+                    if(MedirLuz(0) < claro || MedirLuz(1) < claro || MedirLuz(2) < claro || MedirLuz(3) < claro || MedirLuz(4) < claro) {break;}
+
+                    int anguloRecuperandoLinha;
+                    for(anguloRecuperandoLinha = 0; anguloRecuperandoLinha < 38; anguloRecuperandoLinha++){
+                        bc.MoveFrontal(velocidadeGiro, -velocidadeGiro);
+                        Tick();
+                        if(MedirLuz(0) < claro || MedirLuz(1) < claro || MedirLuz(2) < claro || MedirLuz(3) < claro || MedirLuz(4) < claro) {controleLuz = 1; break;}    
+                    }
+
+                    if(controleLuz == 1){ break; }
+
+                    for(anguloRecuperandoLinha = 0; anguloRecuperandoLinha > -76; anguloRecuperandoLinha--){
+                        bc.MoveFrontal(-velocidadeGiro, velocidadeGiro);
+                        Tick();
+                        if(MedirLuz(0) < claro || MedirLuz(1) < claro || MedirLuz(2) < claro || MedirLuz(3) < claro || MedirLuz(4) < claro) {controleLuz = 1; break;}    
+                    }
+
+                    if(controleLuz == 1){ break; }
+
+                    RetornarCirculo(anguloInicialLinha - bc.Compass(), velocidadeGiro);
+                }
+
+                bc.PrintConsole(1, "Voltei" );
+                bc.MoveFrontal(0, 0);
+                Tick();
+
+                if(MedirLuz(0) < claro){
+                    bc.PrintConsole(1, "Ajeitando" );
+
+                    while(MedirLuz(2) < claro){
+                        bc.MoveFrontal(velocidadeGiro, -velocidadeGiro);
+                        Tick();
+                    }
+
+                    
+                    RetornarCirculo(10, velocidadeGiro);
+                }
+                else if(MedirLuz(4) < claro){
+                    bc.PrintConsole(1, "Ajeitando" );
+
+                    while(MedirLuz(2) < claro){
+                        bc.MoveFrontal(velocidadeGiro, -velocidadeGiro);
+                        Tick();
+                    }
+
+                    RetornarCirculo(-10, velocidadeGiro);
+                }
+
+                bc.PrintConsole(1, "");
+            }
+
+            controleTempoRecuperarLinha = 0;
+            integral = 0;
+        }
     }
 }
 
@@ -340,7 +407,7 @@ void Gangorra(){
 
     if(controleEstagioGangorra == 0){
         bc.PrintConsole(1, "Plano Inclinado");
-    tempoInicialGangorra = bc.Timer();
+        tempoInicialGangorra = bc.Timer();
         controleEstagioGangorra = 1;
     }
 
@@ -349,7 +416,7 @@ void Gangorra(){
         if(tempoInicialGangorra + 2200 < bc.Timer()){
             while(bc.Inclination() > 300 || bc.Inclination() < 15){
                 
-    bc.MoveFrontal(0, 0);
+                bc.MoveFrontal(0, 0);
                 bc.PrintConsole(1, "Estou parado");
                 
                 if(controleAnguloGangorra == bc.Inclination()){
@@ -417,7 +484,7 @@ void Main(){
             controleTempoRecuperarLinha = 0;}
 
         else if(MedirLuz(1) > claro && MedirLuz(2) > claro && MedirLuz(3) > claro){
-            RecuperarLinha(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro);} 
+            RecuperarLinha(1000);} 
 
         // --- Seguidor de Linha --- 
         
@@ -427,7 +494,7 @@ void Main(){
         //150, 20, 1, 5 = 1:16
         //200, 22, 1, 6 = 1:15
         // 200, 24, 0.1f, 10 = 1:20
-        seguirLinhaPID(velocidadeFrontal, 30, 0.5f, 6);
+        seguirLinhaPID(velocidadeFrontal, 30, 0.3f, 6);
     }
     while(estagio == "Teste"){
         bc.MoveFrontal(0, 300);
