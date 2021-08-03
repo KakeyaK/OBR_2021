@@ -11,10 +11,6 @@ Issues      :
                 resolver desvio 90º que está por tempo
                 rever lógica de detecção de giros 90º
 
-                Recuperar linhas usando função seno ok
-                Testar para curvas de 90º ok
-                Verificar fator integral ok
-
     Observar:
 
         Retornar a linha
@@ -27,7 +23,10 @@ bool pararIntegro;
 
 // ====== Variáveis Gerais ====== //
 // - Recuperação de linha
-int controleTempo = 0, tempoInicial = 0, anguloInicialLinha = 0;
+int controleTempo = 0, tempoInicialLinha = 0, anguloInicialLinha = 0;
+
+// - Gangorra
+int tempoInicialGangorra = 0;
 
 // ===============
 // Funções de suporte
@@ -117,7 +116,7 @@ float MatematicaCirculo(float angulo){
 
 // ====== Funções luz ===== //
 float MedirLuz(int sensor){
-    return (100*bc.Lightness(sensor)/maxClaro) ;
+    return bc.Lightness(sensor) ;
 }
 
 // ===============
@@ -128,11 +127,14 @@ void RecuperarLinha(int velocidadeFrontal, int velocidadeGiro){
 
     if(controleTempo == 0){
         controleTempo = 1;
-        tempoInicial = bc.Timer();
+        tempoInicialLinha = bc.Timer();
         anguloInicialLinha = AproximarAngulo();
     }
 
-    else if(tempoInicial + 2000 < bc.Timer()){
+    else if(tempoInicialLinha + 2000 < bc.Timer()){
+        bc.MoveFrontal(0, 0);
+        Tick();
+
         bc.PrintConsole(1, "Voltando na Linha");
 
         bc.MoveFrontal(-velocidadeFrontal, -velocidadeFrontal);
@@ -145,6 +147,7 @@ void RecuperarLinha(int velocidadeFrontal, int velocidadeGiro){
 void seguirLinhaPID (float velocidade, float kp, float ki,float kd){
     // matemática PID
     error = MedirLuz(1) - MedirLuz(3);
+
     integral += error;
     derivate = error - lastError;
     
@@ -255,7 +258,7 @@ void Verde(string curva){
     int velocidadeFrontal = 150, velocidadeGiro = 800; 
     
     bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
-    bc.Wait(1550);
+    bc.Wait(1000);
 
     bc.MoveFrontal(0, 0);
     bc.Wait(100);
@@ -332,39 +335,49 @@ void DesvioUltrassom(){
     RetornarCirculo(-90, velocidadeGiro);
 }
 
+void Gangorra(){
+    bc.PrintConsole(2, "Gangorra");
+
+    tempoInicialGangorra = bc.Timer();
+    while(tempoInicialGangorra + 2600 > bc.Timer()){
+        seguirLinhaPID(200, 20, 0, 6);
+    }
+    bc.MoveFrontal(0, 0);
+    bc.Wait(4000);
+}
+
 // ====== Variáveis Específicas (A serem calibradas) ====== //
-float claro = 70, escuro = 40, maxClaro, maxEscuro; 
-int velocidadeFrontal = 100, velocidadeGiro = 850;
+// Claro = Desvio 90º, perder/recuperar linha
+// escuro = Desvio 90º, ultrassom
+
 string estagio = "Pista";
+
+float claro = 55, escuro = 30, maxClaro, maxEscuro; 
+int velocidadeFrontal = 150, velocidadeGiro = 850;
 
 void Main(){
     bc.PrintConsole(1, "== BEM VINDO KIM ===");
 
-    bc.Wait(1000);
-
-    maxClaro = (bc.Lightness(0) + bc.Lightness(4)) / 2;
-    maxEscuro = bc.Lightness(2);
-
     while(estagio == "Pista"){
 
-        // bc.PrintConsole(2, "1: " + MedirLuz(0).ToString("F") + " 2: " + MedirLuz(1).ToString("F") + " 3: " + MedirLuz(2).ToString("F") + " 4: " + MedirLuz(3).ToString("F") + " 5: " + MedirLuz(4).ToString("F"));
+        bc.PrintConsole(2, "1: " + MedirLuz(0).ToString("F") + " 2: " + MedirLuz(1).ToString("F") + " 3: " + MedirLuz(2).ToString("F") + " 4: " + MedirLuz(3).ToString("F") + " 5: " + MedirLuz(4).ToString("F"));
 
         // --- Desvio do Verde ---
-        if(bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN")  
-        Verde("Esquerda");  // verde esquerda
+        if(bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN"){  
+        Verde("Esquerda");}  // verde esquerda
         
-        if(bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN")  
-        Verde("Direita");  // verde direita
+        if(bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN"){  
+        Verde("Direita");}  // verde direita
         
-        if((bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN") && (bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN"))  
-        Verde("Ambos");  // verde dos dois lados
+        if((bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN") && (bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN")){  
+        Verde("Ambos");}  // verde dos dois lados
 
         // --- Curva 90º ---
-        if((MedirLuz(0) < escuro && MedirLuz(1) < escuro)) 
-        Curva90("Direita", claro);
+        if((MedirLuz(0) < escuro && MedirLuz(1) < escuro)){ 
+        Curva90("Direita", claro);}
         
-        if((MedirLuz(3) < escuro && MedirLuz(4) < escuro)) 
-        Curva90("Esquerda", claro);
+        if((MedirLuz(3) < escuro && MedirLuz(4) < escuro)){
+        Curva90("Esquerda", claro);}
 
         // --- Desvio Objeto ---
         if(bc.Distance(2)<=15f){                        //Função para detectar o obstáculo utilizando o sensor de ultrassom
@@ -373,12 +386,18 @@ void Main(){
             DesvioUltrassom();                      //Aplicando a função definida
         }
 
-        // --- Recuperar Linha ---
-        if(MedirLuz(1) < claro || MedirLuz(2) < claro || MedirLuz(3) < claro)
-        controleTempo = 0;
+        // --- Gangorra --- 
+        if( (bc.Inclination() > 335 && bc.Inclination() < 350) && bc.Distance(1) > 40 ){
+            Gangorra();
+            controleTempo = 0;  
+        }
 
-        else if(MedirLuz(1) > claro && MedirLuz(2) > claro && MedirLuz(3) > claro) 
-        RecuperarLinha(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro);
+        // --- Recuperar Linha ---
+        if(MedirLuz(1) < claro || MedirLuz(2) < claro || MedirLuz(3) < claro) {
+            controleTempo = 0;}
+
+        else if(MedirLuz(1) > claro && MedirLuz(2) > claro && MedirLuz(3) > claro){
+            RecuperarLinha(velocidadeFrontal = velocidadeFrontal, velocidadeGiro = velocidadeGiro);} 
 
         // --- Seguidor de Linha --- 
         
@@ -388,6 +407,10 @@ void Main(){
         //150, 20, 1, 5 = 1:16
         //200, 22, 1, 6 = 1:15
         // 200, 24, 0.1f, 10 = 1:20
-        seguirLinhaPID(velocidadeFrontal, 20, 0, 6);
+        seguirLinhaPID(velocidadeFrontal, 30, 0.5f, 6);
+    }
+    while(estagio == "Teste"){
+        bc.MoveFrontal(0, 300);
+        Tick();
     }
 }
