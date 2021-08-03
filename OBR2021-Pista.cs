@@ -133,7 +133,7 @@ void AjustarAnguloBalde(){
 }
 
 void AjustarAlturaBalde(){
-    while( Math.Sin(bc.AngleActuator() * Math.PI / 180 ) > Math.Sin(318 * Math.PI / 180)){
+    while( Math.Sin(bc.AngleActuator() * Math.PI / 180 ) > Math.Sin(290 * Math.PI / 180)){
 
 		bc.ActuatorUp(40);
 
@@ -380,7 +380,7 @@ void Verde(string curva){
         bc.PrintConsole(1, "");
     }
     if(curva == "Ambos"){
-        // Girar 180º
+        RetornarCirculo(180, velocidadeGiro);
     }
 
     bc.MoveFrontal(-velocidadeFrontal, -velocidadeFrontal);
@@ -400,12 +400,12 @@ void DesvioUltrassom(){
 
     RetornarCirculo(90, velocidadeGiro);
 
-    while(MedirLuz(1) > escuro && MedirLuz(2) > escuro && MedirLuz(3) > escuro){
+    while(MedirLuz(1) > claro && MedirLuz(2) > claro && MedirLuz(3) > claro){
         if(bc.Distance(1) < 25){
             bc.PrintConsole(2, "Bloco detectado a direita");
             
             bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
-            bc.Wait(1850);
+            bc.Wait(2100);
 
             // Curva
             RetornarCirculo(90, velocidadeGiro);
@@ -419,7 +419,7 @@ void DesvioUltrassom(){
     bc.PrintConsole(2, "Linha detectada");
 
     bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
-    bc.Wait(780);
+    bc.Wait(1050);
     RetornarCirculo(-90, velocidadeGiro);
 }
 
@@ -433,7 +433,7 @@ void Gangorra(){
 
     else{
 
-        if(tempoInicialGangorra + 2200 < bc.Timer()){
+        if(tempoInicialGangorra + 3350 < bc.Timer()){
             while(bc.Inclination() > 300 || bc.Inclination() < 15){
                 
                 bc.MoveFrontal(0, 0);
@@ -460,10 +460,12 @@ void Gangorra(){
 
 string estagio = "Pista";
 
-float claro = 55, escuro = 30, maxClaro, maxEscuro; 
+float claro = 55, escuro = 30;
 int velocidadeFrontal = 150, velocidadeGiro = 850;
 
 void Main(){
+    bc.ResetTimer();
+
     bc.PrintConsole(1, "== BEM VINDO KIM ===");
 
     bc.ActuatorSpeed(150); 
@@ -473,6 +475,7 @@ void Main(){
     threadAlturaBalde.Start();
     AjustarAnguloBalde();
 
+while(true){
     while(estagio == "Pista"){
 
         // bc.PrintConsole(2, "1: " + MedirLuz(0).ToString("F") + " 2: " + MedirLuz(1).ToString("F") + " 3: " + MedirLuz(2).ToString("F") + " 4: " + MedirLuz(3).ToString("F") + " 5: " + MedirLuz(4).ToString("F"));
@@ -502,8 +505,14 @@ void Main(){
         }
 
         // --- Gangorra --- 
-        if( (bc.Inclination() > 335 && bc.Inclination() < 350) && bc.Distance(1) > 40 ){
+        if( bc.Inclination() > 335 && bc.Inclination() < 350 && bc.Distance(1) > 40 ){
             Gangorra();
+        }
+
+        // --- Rampa Final ---
+        if( bc.Inclination() > 335 && bc.Inclination() < 345 && bc.Distance(1) < 40){
+            bc.PrintConsole(1, "Vou pra rampa");
+            estagio = "Rampa";
         }
 
         // --- Recuperar Linha ---
@@ -523,8 +532,28 @@ void Main(){
         // 200, 24, 0.1f, 10 = 1:20
         seguirLinhaPID(velocidadeFrontal, 30, 0.3f, 6);
     }
-    while(estagio == "Teste"){
-        bc.MoveFrontal(0, 300);
+    while(estagio == "Rampa"){
+        bc.PrintConsole(1, "Rampa");
+
+        if(bc.Inclination() > 345){
+            bc.MoveFrontal(0, 0);
+            bc.Wait(12000);
+            estagio = "Resgate";
+            break;
+        }
+        
+        // --- Seguir Linha --- //
+        seguirLinhaPID(200, 30, 0.3f, 6);
+    }
+    while(estagio == "Resgate"){
+        bc.PrintConsole(1, "Resgate");
+
+        bc.MoveFrontal(1000, -1000);
         Tick();
     }
+    while(estagio == "Teste"){
+        bc.PrintConsole(1, "Teste");
+
+    }
+}
 }
