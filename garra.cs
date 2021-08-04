@@ -1,4 +1,4 @@
-// Escavadora
+// Mover Escavadora
 void MoverEscavadora(double alvoEscavadora)  //o alvo é o angulo exato em q vc quer q pare, e n o tanto q vc quer q mude
 {
     if (Math.Sin(bc.AngleActuator()*Math.PI/180) > Math.Sin(alvoEscavadora*Math.PI/180))
@@ -23,10 +23,9 @@ void MoverEscavadora(double alvoEscavadora)  //o alvo é o angulo exato em q vc 
     }
 }
 
-// Balde
-void MoverBalde()  //o alvo é o angulo exato em q vc quer q pare, e n o tanto q vc quer q mude
+// Mover Balde
+void MoverBalde(double alvoBalde) //o alvo é o angulo exato em q vc quer q pare, e n o tanto q vc quer q mude
 {
-    double alvoBalde = 7.5;
     if (Math.Sin(bc.AngleScoop()*Math.PI/180) > Math.Sin(alvoBalde*Math.PI/180))
     {
         //enquanto o seno da posicao atual da escavadora for menor q o seno da posicao alvo, a escavadora sobe
@@ -52,20 +51,38 @@ void MoverBalde()  //o alvo é o angulo exato em q vc quer q pare, e n o tanto q
 void Pegar()
 {
     bool hasVictim = bc.HasVictim();
-    if (hasVictim = true)
+    if (hasVictim == true)
     {
         MoverEscavadora(350);
+        bc.PrintConsole(1,"Capturado");
+        bc.Wait(100);
+    }
+    else
+    {
+        bc.PrintConsole(1,"Não há vítima");
+        bc.Wait(100);
     }
 }
 
+// Devolver
+void Devolver()
+{
+    bc.PrintConsole(1,"Devolvendo");
+    MoverEscavadora(10);
+}
+
+//Isso é o que tem q incluir na programação principal, mas vai ter q revisar. O q tem de importante e pronto são as funcoes q o main chama
 void Main()
 {   
-    bc.ActuatorSpeed(100);
-    Thread res = new Thread(MoverBalde);
-    res.Start();
+    bc.ActuatorSpeed(150);
+    bc.PrintConsole(1,"Início da Captura");
+    
+    // abaixar a escavadora e o balde pra pegar a vitima
     MoverEscavadora(11);
-    bc.PrintConsole(1,"AAAAA");
-    bc.MoveFrontal(300,300);
+    MoverBalde(10);
+
+    bc.MoveFrontal(250,250);
+    bc.PrintConsole(1,"Andando");
     bc.Wait(1000);
     Pegar();
 }
