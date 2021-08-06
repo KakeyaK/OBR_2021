@@ -442,12 +442,12 @@ void Gangorra(){
 }
 
 // ====== Variáveis Específicas (A serem calibradas) ====== //
-// Claro = Desvio 90º, perder/recuperar linha
-// escuro = Desvio 90º
 
 string estagio = "Pista";
-bool final = true;
+bool final = false;
 
+// Claro = Desvio 90º, perder/recuperar linha
+// escuro = Desvio 90º
 float claro = 55, escuro = 37;
 int velocidadeFrontal = 150;
 
@@ -463,90 +463,95 @@ void Main(){
     threadAlturaBalde.Start();
     AjustarAnguloBalde();
 
-while(true){
-    while(estagio == "Pista"){
+    while(true){
+        while(estagio == "Pista"){
 
-        // --- Desvio do Verde ---
-        if((bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN") && (bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN")){Verde("Ambos");}  // verde dos dois lados
+            // --- Desvio do Verde ---
+            if((bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN") && (bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN")){Verde("Ambos");}  // verde dos dois lados
 
-        else if(bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN"){  
-        Verde("Esquerda");}  // verde esquerda
-        
-        else if(bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN"){  
-        Verde("Direita");}  // verde direita
-        
-        // --- Saída Final ---
-        if( final && bc.ReturnColor(1) == "RED" && bc.ReturnColor(3) == "RED" ){
-            bc.PrintConsole(2, "AEEEEE TERMINOOOOOOO");
-            bc.MoveFrontal(0, 0);
-            bc.Wait(10000);
+            else if(bc.ReturnColor(3) == "GREEN" || bc.ReturnColor(4) == "GREEN"){  
+            Verde("Esquerda");}  // verde esquerda
+            
+            else if(bc.ReturnColor(0) == "GREEN" || bc.ReturnColor(1) == "GREEN"){  
+            Verde("Direita");}  // verde direita
+            
+            // --- Saída Final ---
+            if( final && bc.ReturnColor(1) == "RED" && bc.ReturnColor(3) == "RED" ){
+                bc.PrintConsole(2, "AEEEEE TERMINOOOOOOO");
+                bc.MoveFrontal(0, 0);
+                bc.Wait(10000);
+            }
+
+            // --- Curva 90º ---
+            if((MedirLuz(0) < escuro && MedirLuz(1) < escuro)){ 
+            Curva90("Direita", claro);}
+            
+            if((MedirLuz(3) < escuro && MedirLuz(4) < escuro)){
+            Curva90("Esquerda", claro);}
+
+            // --- Desvio Objeto ---
+            if(bc.Distance(2)<=15f){                        //Função para detectar o obstáculo utilizando o sensor de ultrassom
+                bc.MoveFrontal(0,0);
+                bc.Wait(100);
+                DesvioUltrassom();                      //Aplicando a função definida
+            }
+
+            // --- Gangorra --- 
+            if( bc.Inclination() > 335 && bc.Inclination() < 350 && bc.Distance(1) > 40 ){
+                Gangorra();
+            }
+
+            // --- Rampa Final ---
+            if( bc.Inclination() > 335 && bc.Inclination() < 345 && bc.Distance(1) < 40){
+                bc.PrintConsole(2, "Vou pra rampa");
+                bc.MoveFrontal(290, 290);
+                bc.Wait(300);
+                estagio = "Rampa";
+            }
+
+
+            // --- Recuperar Linha ---
+            if(MedirLuz(1) < claro || MedirLuz(2) < claro || MedirLuz(3) < claro) {
+                controleTempoRecuperarLinha = 0;}
+
+            else if(MedirLuz(1) > claro && MedirLuz(2) > claro && MedirLuz(3) > claro){
+                RecuperarLinha(950);} 
+
+            // --- Seguidor de Linha --- 
+            
+            // com clamping = 1:20
+            // sem clamping = 1:22
+
+            //150, 20, 1, 5 = 1:16
+            //200, 22, 1, 6 = 1:15
+            // 200, 24, 0.1f, 10 = 1:20
+            seguirLinhaPID(velocidadeFrontal, 30, 0.3f, 6);
         }
+        while(estagio == "Rampa"){
+            bc.PrintConsole(2, "Rampa");
 
-        // --- Curva 90º ---
-        if((MedirLuz(0) < escuro && MedirLuz(1) < escuro)){ 
-        Curva90("Direita", claro);}
-        
-        if((MedirLuz(3) < escuro && MedirLuz(4) < escuro)){
-        Curva90("Esquerda", claro);}
+            if(bc.Inclination() > 345){
+                bc.MoveFrontal(0, 0);
+                bc.Wait(12000);
+                estagio = "Resgate";
+                break;
+            }
 
-        // --- Desvio Objeto ---
-        if(bc.Distance(2)<=15f){                        //Função para detectar o obstáculo utilizando o sensor de ultrassom
-            bc.MoveFrontal(0,0);
-            bc.Wait(100);
-            DesvioUltrassom();                      //Aplicando a função definida
+            if(bc.Inclination() == 0){
+                bc.PrintConsole(2, "Voltando pra pista");
+                bc.MoveFrontal(0, 0);
+                Tick();
+                estagio = "Pista";
+            }
+            
+            // --- Seguir Linha --- //
+            seguirLinhaPID(200, 30, 0.3f, 6);
         }
+        while(estagio == "Resgate"){
+            bc.PrintConsole(2, "Resgate");
 
-        // --- Gangorra --- 
-        if( bc.Inclination() > 335 && bc.Inclination() < 350 && bc.Distance(1) > 40 ){
-            Gangorra();
+            bc.MoveFrontal(1000, -1000);
+            Tick();
         }
-
-        // --- Rampa Final ---
-        if( bc.Inclination() > 335 && bc.Inclination() < 345 && bc.Distance(1) < 40){
-            bc.PrintConsole(1, "Vou pra rampa");
-            estagio = "Rampa";
-        }
-
-
-        // --- Recuperar Linha ---
-        if(MedirLuz(1) < claro || MedirLuz(2) < claro || MedirLuz(3) < claro) {
-            controleTempoRecuperarLinha = 0;}
-
-        else if(MedirLuz(1) > claro && MedirLuz(2) > claro && MedirLuz(3) > claro){
-            RecuperarLinha(950);} 
-
-        // --- Seguidor de Linha --- 
-        
-        // com clamping = 1:20
-        // sem clamping = 1:22
-
-        //150, 20, 1, 5 = 1:16
-        //200, 22, 1, 6 = 1:15
-        // 200, 24, 0.1f, 10 = 1:20
-        seguirLinhaPID(velocidadeFrontal, 30, 0.3f, 6);
     }
-    while(estagio == "Rampa"){
-        bc.PrintConsole(1, "Rampa");
-
-        if(bc.Inclination() > 345){
-            bc.MoveFrontal(0, 0);
-            bc.Wait(12000);
-            estagio = "Resgate";
-            break;
-        }
-        
-        // --- Seguir Linha --- //
-        seguirLinhaPID(200, 30, 0.3f, 6);
-    }
-    while(estagio == "Resgate"){
-        bc.PrintConsole(1, "Resgate");
-
-        bc.MoveFrontal(1000, -1000);
-        Tick();
-    }
-    while(estagio == "Teste"){
-        bc.PrintConsole(1, "Teste");
-
-    }
-}
 }
