@@ -1,12 +1,23 @@
 /*
 Título      :   OBR 2021 Funções de regate de vítimas
-Autor       :   Mauro Moledo
-Versão      :   1.2
+Autor       :   Mauro Moledo & Tuco
+Versão      :   1.3
 Data scrum  :   04/08
 Alterações  :   ALINHAR ANTES DE ENTRAR NA PISTAaaaaaaaaaaaaaaaaaAAAAAAAAAAAA
+Nome do Robo:   Batatinha quente
 */
 
 // Funções Deletaveis
+void MoverPorUnidade(float distancia){
+    if(distancia > 0){
+        bc.MoveFrontal(200, 200);
+        bc.Wait((int) (distancia/39.64*1000));
+    }
+    else{
+        bc.MoveFrontal(-200, -200);
+        bc.Wait((int) (-distancia/39.64*1000));
+    }
+}
 
 void Tick() { bc.Wait(30); }
 
@@ -68,6 +79,18 @@ void RetornarCirculo(float anguloMovimento, float velocidade)
                 Tick();
             }
         }
+    }
+}
+
+void ChegarNoAngulo(float angulo){
+    if(MatematicaCirculo(angulo - bc.Compass()) < 180){
+        //girar no sentido horário
+        RetornarCirculo(MatematicaCirculo(angulo - bc.Compass()), velocidadeGiro);
+    }
+                
+    else{
+        //girar no sentido anti-horário
+        RetornarCirculo(MatematicaCirculo(angulo - bc.Compass()) - 360, velocidadeGiro);
     }
 }
 
@@ -153,12 +176,10 @@ void MoverEscavadora(double alvoEscavadora)
 void PegarBolinha()
 {
     bc.ActuatorSpeed(150);
-    bc.PrintConsole(1, "Início da Captura");
 
     // abaixar a escavadora e o balde pra pegar a vitima
     PosicionarGarraBaixo();
 
-    bc.PrintConsole(1, "Andando");
     bc.MoveFrontal(250, 250);
     bc.Wait(500);
     bc.MoveFrontal(0, 0);
@@ -177,15 +198,12 @@ void PegarBolinha()
         bc.ActuatorSpeed(100);
         MoverEscavadora(291);
 
-        bc.PrintConsole(1, "Capturado");
         bc.Wait(100);
 
     }
     else
     {
-        bc.PrintConsole(1, "Não há vítima");
         Tick();
-
     }
 }
 
@@ -240,12 +258,32 @@ void AnguloArena()
 
 }
 
+float UltraInicial () 
+{   
+    float ultraInicial;
+
+    if (bc.Distance(1 - 1) > 9000)
+    {
+        RetornarCirculo(180, 900);
+        ultraInicial = bc.Distance(1 - 1);
+        Tick();
+        RetornarCirculo(180, 900);
+    }
+    else
+    {
+        ultraInicial = bc.Distance(1 - 1);
+    }
+
+    return ultraInicial;
+}
+
 // ====================
 //  Funções do Resgate
 // ====================
 
 void BolinhaNaGuela()
-{
+{   
+    bc.TurnLedOn(0, 255, 0);
     bc.MoveFrontal(-velocidade, -velocidade);
     bc.Wait(500);
     bc.MoveFrontal(0, 0);
@@ -261,20 +299,24 @@ void BolinhaNaGuela()
 
     PosicionarGarraAlto();
 
+    bc.MoveFrontal(0, 0);
+    Tick();
+
     if(bc.Distance(1 - 1) > 240){
-        while(bc.Distance(1 - 1) < 240){
-            bc.MoveFrontal(velocidade, velocidade);
+        while(bc.Distance(1 - 1) > 240 || bc.Inclination() > 5){
+            bc.MoveFrontal(100, 100);
             Tick();
         }
     }
     else{
-        while(bc.Distance(1 - 1) > 240){
-            bc.MoveFrontal(-velocidade, -velocidade);
+        while(bc.Distance(1 - 1) < 240 || bc.Inclination() > 5){
+            bc.MoveFrontal(-100, -100);
             Tick();
         }        
     }
     bc.MoveFrontal(0, 0);
     Tick();
+    bc.TurnLedOff();
 }
 
 void IdentificarArea()
@@ -328,8 +370,8 @@ void IdentificarSaida()
     //== Identifica saida ==//
 
     while (true)
-    {
-        if (bc.Distance(1 - 1) > 900 && bc.Compass() < MatematicaCirculo(anguloInicialResgate + 50))
+    {   
+        if (bc.Distance(1 - 1) > 900 && bc.Compass() > MatematicaCirculo(anguloInicialResgate + 30) && bc.Compass() < MatematicaCirculo(anguloInicialResgate + 45))
         {
             saida = "Frontal-Direita";
             bc.PrintConsole(4, "Saida Frontal-Direita");
@@ -340,7 +382,9 @@ void IdentificarSaida()
             }
             break;
         }
-        else if ((bc.Distance(1 - 1) > 900 && bc.Compass() > MatematicaCirculo(anguloInicialResgate + 75)) || saida == "Direita")
+
+        // 270 = 340 < X < 470/110
+        else if ((bc.Distance(1 - 1) > 900 && bc.Compass() > MatematicaCirculo(anguloInicialResgate + 70) && bc.Compass() < MatematicaCirculo(anguloInicialResgate + 85)) || saida == "Direita")
         {
             saida = "Direita";
             bc.PrintConsole(4, "Saida Direita");
@@ -352,7 +396,7 @@ void IdentificarSaida()
             break;
         }
         // Sempre da certo porque o ângulo é garantido > 0 (nunca == 350+) pela função IdentificarArena
-        else if (bc.Compass() > MatematicaCirculo(anguloInicialResgate + 83))
+        else if (bc.Compass() > MatematicaCirculo(anguloInicialResgate + 85))
         {
             saida = "Esquerda";
             bc.PrintConsole(4, "Saida Esquerda");            
@@ -362,6 +406,7 @@ void IdentificarSaida()
             break;
         }
 
+        // Girando para identificar saídas
         bc.MoveFrontal(-velocidadeGiro, velocidadeGiro);
         Tick();
     }
@@ -381,7 +426,7 @@ void indetificarSaidaCasosEspeciais()
     PosicionarGarraBaixo();
 
     //Girar para 43º
-    RetornarCirculo(-MatematicaCirculo(bc.Compass() - MatematicaCirculo(anguloInicialResgate + 43)), velocidadeGiro);
+    ChegarNoAngulo(anguloInicialResgate + 43);
 
     //Andar até bater no resgate
     while (bc.Distance(1 - 1) > 100)
@@ -439,8 +484,8 @@ void indetificarSaidaCasosEspeciais()
         {
             PosicionarMeio(100);
             // Entrega Bolinha
-            // RetornarCirculo(MatematicaCirculo(MatematicaCirculo(anguloInicialResgate + 135) - bc.compass()), velocidadeGiro);
-            RetornarCirculo(50, velocidadeGiro);
+            ChegarNoAngulo(anguloInicialResgate + 135);
+
             while(bc.Distance(1 - 1) < 170 || bc.Distance(1 - 1) > 172){
                 bc.MoveFrontal(-800, 800);
                 Tick();
@@ -476,13 +521,20 @@ void PosicionarMeio(int velocidadeFrontal)
         bc.MoveFrontal(0, 0);
         Tick();
     }
-    else{
-        RetornarCirculo(-MatematicaCirculo(bc.Compass() - MatematicaCirculo(anguloInicialResgate + 43)), velocidadeGiro);
+    else{ 
+        ChegarNoAngulo(anguloInicialResgate + 43);
 
-        while (bc.Distance(1 - 1) > 170)
-        {
-            bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
-            Tick();
+        //336.76 - 170 = 
+        //No caso frontal-Direita, não se poder usar o ultrassom
+        if(bc.Distance(1 - 1) > 9000){
+            MoverPorUnidade(166.76f);
+        }
+        else{
+            while (bc.Distance(1 - 1) > 170)
+            {
+                bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
+                Tick();
+            }
         }
     }
 
@@ -491,6 +543,7 @@ void PosicionarMeio(int velocidadeFrontal)
 void Radar()
 {
     bool stop = false;
+    //Sempre apontando para diagonais do quadrado
     float radarAnguloInicial = bc.Compass();
     while (true)
     {
@@ -503,27 +556,27 @@ void Radar()
         bc.PrintConsole(1, (diferenca1).ToString());
         bc.PrintConsole(2, (diferenca2).ToString());
 
+        // Garante que a vai pegar uma bolinha (distancia entre os ultrassoms sempre > 7.5)
         if (diferenca2 < 7.5)
         {
             bc.MoveFrontal(-900, 900);
-            Tick();
         }
 
+        // Garante que não vai se jogar no vazio
         else if (diferenca2 > 900 && diferenca2 < 9850)
         {
             bc.MoveFrontal(-900, 900);
-            Tick();
         }
 
+        // Não pega o abismo
         else if (diferenca1 != 0 && diferenca2 > 900)
         {
             bc.MoveFrontal(-900, 900);
-            Tick();
         }
 
         else if (diferenca2 - diferenca1 > 6)
         {
-            bc.Wait(120);
+            bc.Wait(200);
             bc.MoveFrontal(0, 0);
             Tick();
             bc.PrintConsole(0, "===Bolinha==="); //achou bolinha
@@ -534,14 +587,14 @@ void Radar()
         else
         {
             bc.MoveFrontal(-900, 900);
-            Tick();
         }
 
-        if ((bc.Compass() > radarAnguloInicial && bc.Compass() < radarAnguloInicial + 2) && stop == true) //blind spot
+        // Lógica para parar o radar
+        if ((bc.Compass() > radarAnguloInicial && bc.Compass() < radarAnguloInicial + 3) && stop == true) //blind spot
         {
             break;
         }
-        else if (bc.Compass() > radarAnguloInicial + 2 && bc.Compass() < radarAnguloInicial + 4) //blind spot para setar a variavel
+        else if (bc.Compass() > radarAnguloInicial + 3 && bc.Compass() < radarAnguloInicial + 5) //blind spot para setar a variavel
         {
             stop = true;
         }
@@ -550,15 +603,12 @@ void Radar()
 
 void EntregaBolinha()
 {
-
-    float ultra1Inicial = bc.Distance(1 - 1);
-    float ultra3Inicial = bc.Distance(3 - 1);
-
+   ultraInicialRadar = UltraInicial();
     // Ir pra tras pra pegar a bolinha (não esmagar)
-    if (bc.Distance(3 - 1) < 31)
+    if (bc.Distance(3 - 1) < 35)
     {
 
-        while (bc.Distance(3 - 1) < 30)
+        while (bc.Distance(3 - 1) < 35)
         {
             bc.MoveFrontal(-velocidade, -velocidade);
             Tick();
@@ -570,7 +620,7 @@ void EntregaBolinha()
     // Ir pra frente para pegar a bolinha
     else
     {
-        while (bc.Distance(3 - 1) > 31)
+        while (bc.Distance(3 - 1) > 35)
         {
             bc.MoveFrontal(velocidade, velocidade);
             Tick();
@@ -585,61 +635,32 @@ void EntregaBolinha()
 
     if (bc.HasVictim() == true)
     {
-        PosicionarMeioRadar(ultra1Inicial, 150);
 
-        if ((area == "Direita" && bc.Compass() > anguloAreaSoma + 45 + 90) || (area == "DireitaC" && bc.Compass() > anguloAreaSoma + 45 + 90))
-        {
-            while (bc.Compass() < anguloAreaSoma + 90 + 45)
-            {
-                bc.MoveFrontal(velocidadeGiro, -velocidadeGiro);
-                Tick();
-            }
-        }
-        else if ((area == "Direita" && bc.Compass() < anguloAreaSoma + 45 + 90) || (area == "DireitaC" && bc.Compass() < anguloAreaSoma + 45 + 90))
-        {
-            while (bc.Compass() < anguloAreaSoma + 90 + 45)
-            {
-                bc.MoveFrontal(-velocidadeGiro, velocidadeGiro);
-                Tick();
-            }
-        }
-        else if ((area == "Frontal-Direita" && bc.Compass() > anguloAreaSoma + 45) || (area == "Frontal-DireitaC" && bc.Compass() > anguloAreaSoma + 45))
-        {
-            while (bc.Compass() > anguloAreaSoma + 45)
-            {
-                bc.MoveFrontal(velocidadeGiro, -velocidadeGiro);
-                Tick();
-            }
-        }
-        else if ((area == "Frontal-Direita" && bc.Compass() < anguloAreaSoma + 45) || (area == "Frontal-DireitaC" && bc.Compass() < anguloAreaSoma + 45))
-        {
-            while (bc.Compass() < anguloAreaSoma + 45)
-            {
-                bc.MoveFrontal(-velocidadeGiro, velocidadeGiro);
-                Tick();
-            }
+        // Volta para o meio
+        PosicionarMeioRadar(ultraInicialRadar, 150);
+
+        // Girar na direção da área de resgate
+        if (area == "Direita" || area == "DireitaC"){
+            
+            ChegarNoAngulo(anguloInicialResgate + 135);
+
         }
 
-        else if (area == "Esquerda" && bc.Compass() < anguloAreaMenos - 45)
-        {
-            while (bc.Compass() < anguloAreaMenos - 45)
-            {
-                bc.MoveFrontal(-velocidadeGiro, velocidadeGiro);
-                Tick();
-            }
-        }
-        else if (area == "Esquerda" && bc.Compass() > anguloAreaMenos - 45)
-        {
-            while (bc.Compass() > anguloAreaMenos - 45)
-            {
-                bc.MoveFrontal(velocidadeGiro, -velocidadeGiro);
-                Tick();
-            }
+        if (area == "Frontal-Direita" || area == "Frontal-DireitaC"){
+
+            ChegarNoAngulo(anguloInicialResgate + 45);
+
         }
 
-        ultra1Inicial = bc.Distance(1 - 1);
+        if (area == "Esquerda"){
 
-        while ((bc.Distance(3 - 1) > 4) || (bc.Distance(1 - 1) > 85) || (bc.ReturnColor(6 - 1) != "BLACK"))
+            ChegarNoAngulo(anguloInicialResgate + 315);
+
+        }
+
+        ultraInicialRadar = UltraInicial();
+
+        while (bc.Distance(1 - 1) > 70)
         {
             bc.MoveFrontal(velocidade, velocidade);
             Tick();
@@ -649,12 +670,52 @@ void EntregaBolinha()
         // === Movimentação da Garra ===
         if (bc.HasVictim()) { DevolverBolinha(); }
         PosicionarGarraAlto();
-        PosicionarMeioRadar(ultra1Inicial, velocidade);
+        PosicionarMeioRadar(ultraInicialRadar, velocidade);
     }
     else
     {
         PosicionarGarraAlto();
-        PosicionarMeioRadar(ultra1Inicial, velocidade);
+        PosicionarMeioRadar(ultraInicialRadar, velocidade);
+    }
+}
+
+void PosicionarMeioRadar(float ultraInicial, int velocidadeFrontal)
+{
+    if (bc.Distance(1 - 1) > 900)
+    {
+        RetornarCirculo(180, 900);
+
+        if(bc.Distance(1 - 1) > ultraInicial){
+            while (bc.Distance(1 - 1) > ultraInicial)
+            {
+                bc.MoveFrontal(-velocidadeFrontal, -velocidadeFrontal);
+                Tick();
+            }
+        }
+        else{
+            while (bc.Distance(1 - 1) < ultraInicial)
+            {
+                bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
+                Tick();
+            }
+        }
+    }
+    else
+    {   
+        if(bc.Distance(1 - 1) > ultraInicial){
+            while (bc.Distance(1 - 1) > ultraInicial)
+            {
+                bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
+                Tick();
+            }
+        }
+        else{
+            while (bc.Distance(1 - 1) < ultraInicial)
+            {
+                bc.MoveFrontal(-velocidadeFrontal, -velocidadeFrontal);
+                Tick();
+            }
+        }
     }
 }
 
@@ -718,26 +779,6 @@ void IrEmbora()
 
 }
 
-void PosicionarMeioRadar(float ultra1Inicial, int velocidadeFrontal)
-{
-    if (bc.Distance(1 - 1) > 900)
-    {
-        RetornarCirculo(180, 900);
-
-        while (bc.Distance(1 - 1) > 152)
-        {
-            bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
-        }
-    }
-    else
-    {
-        while (bc.Distance(1 - 1) < ultra1Inicial)
-        {
-            bc.MoveFrontal(-velocidadeFrontal, -velocidadeFrontal);
-        }
-    }
-}
-
 // === VARIÁVEIS === //
 string saida;
 string area;
@@ -749,6 +790,8 @@ float anguloAreaSoma;
 float anguloAreaMenos;
 
 float anguloInicialResgate = 0;
+
+float ultraInicialRadar;
 
 // ================================== MAIN ================================== //
 void Main()
@@ -773,7 +816,7 @@ void Main()
 
     IdentificarSaida();
 
-    bc.PrintConsole(0, "Vou identificar CASOS ESPECIAIS");
+    bc.PrintConsole(0, "Vou pro meio");
     bc.MoveFrontal(0, 0);
     bc.Wait(1000);
 
@@ -781,9 +824,13 @@ void Main()
 
     bc.PrintConsole(0, "Vou começar o radar");
     bc.MoveFrontal(0, 0);
-    bc.Wait(1000000);
+    bc.Wait(1000);
 
-    // Radar();
+    Radar();
+
+    bc.PrintConsole(0, "Vou embora");
+    bc.MoveFrontal(0, 0);
+    bc.Wait(1000000);
 
     // IrEmbora();
 
