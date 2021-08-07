@@ -7,7 +7,7 @@ Alterações  :
 Nome do Robo:   Batatinha quente
 */
 
-// Funções Deletaveis
+// Funções auxiliares
 
 
 void MoverPorUnidade(float distancia){
@@ -212,7 +212,6 @@ void PegarBolinha()
 
 void DevolverBolinha()
 {
-    bc.PrintConsole(1, "Devolvendo");
     MoverBalde(320);
     MoverEscavadora(340);
     bc.Wait(1000);
@@ -228,10 +227,8 @@ void PosicionarGarraBaixo()
 {
     MoverBalde(11);
     MoverEscavadora(11);
-    bc.PrintConsole(0, "Terminei de abaixar");
     Tick();
 }
-
 
 float UltraInicial () 
 {   
@@ -259,7 +256,7 @@ float UltraInicial ()
 void BolinhaNaGuela()
 {   
     bc.TurnLedOn(0, 255, 0);
-    bc.MoveFrontal(-velocidade, -velocidade);
+    bc.MoveFrontal(-295, -295);
     bc.Wait(500);
     bc.MoveFrontal(0, 0);
     Tick();
@@ -267,7 +264,7 @@ void BolinhaNaGuela()
     MoverEscavadora(10);
     MoverBalde(320);
 
-    bc.MoveFrontal(velocidade, velocidade);
+    bc.MoveFrontal(295, 295);
     bc.Wait(1200);
     bc.MoveFrontal(0, 0);
     Tick();
@@ -277,14 +274,17 @@ void BolinhaNaGuela()
     bc.MoveFrontal(0, 0);
     Tick();
 
+    bc.MoveFrontal(295, 295);
+    bc.Wait(400);
+
     if(bc.Distance(1 - 1) > 240){
-        while(bc.Distance(1 - 1) > 240 || bc.Inclination() > 5){
+        while(bc.Distance(1 - 1) > 240){
             bc.MoveFrontal(100, 100);
             Tick();
         }
     }
     else{
-        while(bc.Distance(1 - 1) < 240 || bc.Inclination() > 5){
+        while(bc.Distance(1 - 1) < 240){
             bc.MoveFrontal(-100, -100);
             Tick();
         }        
@@ -750,7 +750,6 @@ void Main()
 
     bc.PrintConsole(0, "Vou começar o radar");
     bc.MoveFrontal(0, 0);
-  
 
     Radar();
 
