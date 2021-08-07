@@ -572,8 +572,21 @@ void PosicionarMeio(int velocidadeFrontal)
 
 void Radar()
 {
-    bool stop = false;
     //Sempre apontando para diagonais do quadrado
+    //44 + 190 = 234
+    //44 - 190 = 214
+
+    if(area == "Direita" || area == "DireitaC"){
+        ChegarNoAngulo(MatematicaCirculo(anguloInicialResgate + 135));
+    }
+    else if(area == "Frontal-Direita" || area == "Frontal-DiretaC"){
+        ChegarNoAngulo(MatematicaCirculo(anguloInicialResgate + 45));
+    }
+    else if(area == "Esquerda"){
+        ChegarNoAngulo(MatematicaCirculo(anguloInicialResgate + 315));
+    }
+    
+    
     float radarAnguloInicial = bc.Compass();
     while (true)
     {
@@ -608,13 +621,12 @@ void Radar()
 
         else if (diferenca2 - diferenca1 > 6.5d)
         {
-            bc.Wait(150);
+            bc.Wait(170);
             bc.MoveFrontal(0, 0);
             Tick();
             bc.PrintConsole(0, "===Bolinha==="); //achou bolinha
-            EntregaBolinha(); // Toda a rotina de entregar a bolinha
+            EntregaBolinha("HORARIO"); // Toda a rotina de entregar a bolinha
             bc.Wait(1000);
-            stop = false; // seta a varivel
         }
 
         else
@@ -623,24 +635,81 @@ void Radar()
         }
 
         // Lógica para parar o radar
-        if ((bc.Compass() > radarAnguloInicial && bc.Compass() < radarAnguloInicial + 3) && stop == true) //blind spot
-        {
+        if (bc.Compass() > MatematicaCirculo(radarAnguloInicial + 190) && bc.Compass() < MatematicaCirculo(radarAnguloInicial + 195)) //blind spot
+        {   
+            RetornarCirculo(-150, 950);
+            bc.MoveFrontal(0, 0);
+            Tick();
             break;
         }
-        else if (bc.Compass() > radarAnguloInicial + 3 && bc.Compass() < radarAnguloInicial + 5) //blind spot para setar a variavel
+    }
+    while (true)
+    {
+        bc.PrintConsole(0, "Radar");
+
+        float diferenca1 = bc.Distance(1 - 1) - bc.Distance(3 - 1);
+        bc.Wait(10);
+        float diferenca2 = bc.Distance(1 - 1) - bc.Distance(3 - 1);
+
+        bc.PrintConsole(1, (diferenca1).ToString());
+        bc.PrintConsole(2, (diferenca2).ToString());
+        
+        //Pega no sentido certo
+        if (diferenca1 > diferenca2) {
+            bc.MoveFrontal(950, -950);
+        }
+
+        //impede de pegar parede | vendo absimo -> viu parede e abmismo |
+        else if (diferenca1 == 0 && diferenca2 < 9850) {
+            bc.MoveFrontal(950, -950);
+        }
+
+        //impede de pegar parede | vendo parede -> viu parede e abismo |
+        else if (diferenca1 != 0 && diferenca2 > 900){
+            bc.MoveFrontal(950, -950);
+        }
+
+        //impede de pegar parede | vendo parede e abismo -> viu parede e abismo |
+        else if (diferenca1 > 900 && diferenca2 > 900){
+            bc.MoveFrontal(950, -950);
+        }
+
+        else if (diferenca2 - diferenca1 > 6.5d)
         {
-            stop = true;
+            bc.Wait(170);
+            bc.MoveFrontal(0, 0);
+            Tick();
+            bc.PrintConsole(0, "===Bolinha==="); //achou bolinha
+            EntregaBolinha("ANTI-HORARIO"); // Toda a rotina de entregar a bolinha
+            bc.Wait(1000);
+        }
+
+        else
+        {
+            bc.MoveFrontal(950, -950);
+        }
+
+        // Lógica para parar o radar
+        if (bc.Compass() < MatematicaCirculo(radarAnguloInicial - 190) && bc.Compass() > MatematicaCirculo(radarAnguloInicial - 195)) //blind spot
+        {
+            break;
         }
     }
 }
 
-void EntregaBolinha()
+void EntregaBolinha(string direcao)
 {
+    float compassRadar = bc.Compass();
     float ultraRadar = UltraInicial();
     // Ir pra tras pra pegar a bolinha (não esmagar)
     if (bc.Distance(3 - 1) < 35)
-    {
-        RetornarCirculo(3, 900);
+    {   
+        if(direcao == "HORARIO"){
+            RetornarCirculo(5, 900);
+        }
+        else{
+            RetornarCirculo(-5, 900);
+        }
 
         while (bc.Distance(3 - 1) < 35)
         {
@@ -669,14 +738,21 @@ void EntregaBolinha()
 
     //Vai devagar se tiver vitima
     if (bc.HasVictim())
-    {
+    {   
+        ChegarNoAngulo(compassRadar);
         PosicionarMeioRadar(ultraRadar, 150);
 
     }
     else
     {
+        ChegarNoAngulo(compassRadar);
         PosicionarMeioRadar(ultraRadar, velocidadeGlobal);
-        RetornarCirculo(-5, 900);
+        if(direcao == "HORARIO"){
+            RetornarCirculo(-5, 900);
+        }
+        else{
+            RetornarCirculo(5, 900);
+        }
     }
 
     if (bc.HasVictim() == true)
@@ -699,11 +775,11 @@ void EntregaBolinha()
             ChegarNoAngulo(anguloInicialResgate + 315);
 
         }
-
+        compassRadar = bc.Compass();
         ultraRadar = UltraInicial();
         bc.PrintConsole(0, ultraRadar.ToString());
 
-        while (bc.Distance(1 - 1) > 72)
+        while (bc.Distance(1 - 1) > 75)
         {
             bc.MoveFrontal(velocidadeGlobal, velocidadeGlobal);
             Tick();
@@ -713,6 +789,7 @@ void EntregaBolinha()
         // === Movimentação da Garra ===
         if (bc.HasVictim()) { DevolverBolinha(); }
         PosicionarGarraAlto();
+        ChegarNoAngulo(compassRadar);
         PosicionarMeioRadar(ultraRadar, velocidadeGlobal);
     }
 }
@@ -804,7 +881,7 @@ void IrEmbora()
     }
 
     bc.MoveFrontal(150, 150);
-    bc.Wait(1000);
+    bc.Wait(600);
 
     bc.PrintConsole(0, "Procurando linha");
     
