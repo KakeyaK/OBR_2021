@@ -949,6 +949,7 @@ void seguirLinhaPID (float velocidade, float kp, float ki,float kd){
 void Curva90(string curva, float claro = 25){
 
     int velocidadeFrontal = 150, velocidadeGiro = 950;
+    bool retornar = true;
     
     bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
     bc.Wait(470);
@@ -979,6 +980,8 @@ void Curva90(string curva, float claro = 25){
                         bc.MoveFrontal(-velocidadeGiro, velocidadeGiro);
                         Tick();
                     }
+                    controleTempoRecuperarLinha = 0;
+                    retornar = false;
                     break;
                 }
             }
@@ -1009,17 +1012,21 @@ void Curva90(string curva, float claro = 25){
                         bc.MoveFrontal(+velocidadeGiro, -velocidadeGiro);
                         Tick();
                     }
+                    controleTempoRecuperarLinha = 0;
+                    retornar = false;
                     break;
                 }
             }
         }
     }
 
-    bc.MoveFrontal(-velocidadeFrontal, -velocidadeFrontal);
-    bc.Wait(200);
+    if(retornar){
+        bc.MoveFrontal(-velocidadeFrontal, -velocidadeFrontal);
+        bc.Wait(200);
 
-    bc.MoveFrontal(0, 0);
-    bc.Wait(100);
+        bc.MoveFrontal(0, 0);
+        bc.Wait(100);
+    }
 }
 
 void Verde(string curva){
@@ -1209,6 +1216,7 @@ void Main(){
                 bc.MoveFrontal(290, 290);
                 bc.Wait(300);
                 ChegarNoAngulo(AproximarAngulo(bc.Compass()));
+                MoverEscavadora(312);
                 estagio = "Rampa";
             }
 
