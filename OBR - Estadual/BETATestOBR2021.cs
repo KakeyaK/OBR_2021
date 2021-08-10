@@ -605,9 +605,9 @@ void Radar()
         }
 
         //impede de pegar parede | vendo absimo -> viu parede e abmismo |
-        else if (diferenca1 == 0 && diferenca2 < 9850) {
-            bc.MoveFrontal(-950, 950);
-        }
+        else if (diferenca1 == 0 && diferenca2 < 9853) { //10.0000 - 150 = 9.850
+            bc.MoveFrontal(-950, 950);                   // 140
+        }                                                // 149
 
         //impede de pegar parede | vendo parede -> viu parede e abismo |
         else if (diferenca1 != 0 && diferenca2 > 900){
