@@ -48,16 +48,6 @@ class Pista
         // Atualização de variável
         lastError = error;
     }
-
-    private float movimentoL = 0, movimentoR = 0; 
-    public void SeguirLinhaMotorIndividual(){
-        movimentoR = (bc.Lightness(0) - 40) * 15;
-        movimentoL = (bc.Lightness(1) - 40) * 15;
-
-        bc.MoveFrontal(movimentoR, movimentoL);
-        aux.Tick();
-
-    }
 }
 
 class MatAng
