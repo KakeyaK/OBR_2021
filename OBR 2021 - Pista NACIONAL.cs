@@ -5,6 +5,10 @@ void Main()
     {
         pista.SeguirLinhaMotorIndividual();
     }
+    
+    MatAng matematica = new MatAng();
+    MatAng.AproximarAngulo();
+
 }
 
 class Pista
@@ -115,7 +119,8 @@ class aux
 
 }
 
-class mov{
+class mov
+{
     /*
     ====== Funções de Movimento ======
     - MoverUltra
@@ -164,6 +169,7 @@ class mov{
             bc.Wait((int)(-distancia / 39.64 * 1000));
         }
     }
+    
     static public void MoverBalde(double alvoBalde)
     {   
         /*
@@ -284,7 +290,8 @@ class mov{
             }
         }
     }
-    static public void MoverProAngulo(float angulo)
+
+    static public void MoverProAngulo(float angulo, float velocidade)
     {   
         /*
         Se locomove até o ângulo desejado. 
@@ -296,13 +303,13 @@ class mov{
         if (MatAng.MatematicaCirculo(angulo - bc.Compass()) < 180)
         {
             //girar no sentido horário
-            MoverNoCirculo(MatAng.MatematicaCirculo(angulo - bc.Compass()));
+            MoverNoCirculo(MatAng.MatematicaCirculo(angulo - bc.Compass()), velocidade);
         }
 
         else
         {
             //girar no sentido anti-horário
-            MoverNoCirculo(MatAng.MatematicaCirculo(angulo - bc.Compass()) - 360);
+            MoverNoCirculo(MatAng.MatematicaCirculo(angulo - bc.Compass()) - 360, velocidade);
         }
     }
 
