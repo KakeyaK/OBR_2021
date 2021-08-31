@@ -3,12 +3,9 @@ void Main()
     Pista pista = new Pista();
     while (true)
     {
-        pista.SeguirLinhaMotorIndividual();
+        Pista.SeguirLinhaPID(200, 20, 0.4f, 5);
     }
     
-    MatAng matematica = new MatAng();
-    MatAng.AproximarAngulo();
-
 }
 
 class Pista
