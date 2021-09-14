@@ -1,27 +1,39 @@
+int velocidade = 170;
+
 void Main()
-{
-    Pista pista = new Pista();
+{   
+    pista pista = new pista();
     while (true)
     {
         pista.SeguirLinhaPID(200, 20, 0.4f, 5);
-    }
+
+        if(bc.ReturnColor(1 - 1) == "GREEN"){
+            pista.GirarVerde("direita");
+        }
+        if(bc.ReturnColor(2 - 1) == "GREEN"){
+            pista.GirarVerde("esquerda");
+        }
+        pista.SeguirLinhaPID(velocidade, 20, 1.5f, 10);
     
 }
 
-class Pista
+class pista
 {
     // Variáveis PID
     private float error = 0, lastError = 0, integral = 0, derivate = 0;
     private float movimento;
     private bool pararIntegro;
+    static int escuro = 20;
     
     public void SeguirLinhaPID(float velocidade, float kp, float ki, float kd)
     {
-        // matemática PID
-        error = bc.Lightness(0) - bc.Lightness(1);
+        float sensibilidade90 = 37;
 
+        // matemática PID
+        error = aux.MedirLuz(1) - aux.MedirLuz(2);
         integral += error;
         derivate = error - lastError;
+
 
         if (pararIntegro)
         {
@@ -48,6 +60,74 @@ class Pista
 
         // Atualização de variável
         lastError = error;
+        
+        if(error > sensibilidade90){
+            pista.Girar90("esquerda");
+        }
+        else if(error < -sensibilidade90){
+            pista.Girar90("direita");
+        }
+    }
+
+    static public void Girar90(string lado){
+        bc.MoveFrontal(200, 200);
+        bc.wait(400);
+        
+        if(lado == "esquerda"){
+            bc.PrintConsole(1, "Giro para esquerda");
+            
+            float anguloInicial = bc.Compass();
+            while(aux.MedirLuz(1) > escuro){
+                bc.MoveFrontal(900, -900);
+                aux.Tick();
+            }
+            bc.MoveFrontal(-900, 900);
+            bc.Wait(350);
+        }
+        
+        else if(lado == "direita"){
+            bc.PrintConsole(1, "Giro para direita");
+
+            float anguloInicial = bc.Compass();
+            while(aux.MedirLuz(2) > escuro){
+                bc.MoveFrontal(-900, 900);
+                aux.Tick();
+
+                // if(bc.Compass()) girar usando aproximação de angulo + 90
+            }
+            bc.MoveFrontal(900, -900);
+            bc.Wait(350);
+        }
+
+        // bc.MoveFrontal(-200, -200);
+        // bc.wait(150);
+    }
+
+    static public void GirarVerde(string lado){
+        bc.MoveFrontal(200, 200);
+        bc.wait(400);
+        
+        if(lado == "esquerda"){
+            bc.PrintConsole(1, "Verde para esquerda");
+            mov.MoverNoCirculo(-35);
+            while(aux.MedirLuz(1) > escuro){
+                bc.MoveFrontal(900, -900);
+                aux.Tick();
+            }
+            bc.MoveFrontal(-900, 900);
+            bc.Wait(350);
+        }
+        
+        else if(lado == "direita"){
+            bc.PrintConsole(1, "Verde para direita");
+            mov.MoverNoCirculo(35);
+            while(aux.MedirLuz(2) > escuro){
+                bc.MoveFrontal(-900, 900);
+                aux.Tick();
+            }
+            bc.MoveFrontal(900, -900);
+            bc.Wait(350);
+        }
     }
 }
 
@@ -68,6 +148,7 @@ class MatAng
         if (angulo >= 225 && angulo < 315) return 270;
         else return 0;
     }
+    
     static public float MatematicaCirculo(float angulo)
     {
     // Faz matemática em ciclo, retornando o valor de deslocamento no ciclo trigonométrico.
@@ -111,7 +192,7 @@ class aux
         /* 
         Filtro da função de medir luz do robô
         */
-        return bc.Lightness(sensor);
+        return bc.Lightness(sensor - 1);
     }
 
 }
