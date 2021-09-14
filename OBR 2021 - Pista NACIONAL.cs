@@ -3,7 +3,7 @@ void Main()
     Pista pista = new Pista();
     while (true)
     {
-        Pista.SeguirLinhaPID(200, 20, 0.4f, 5);
+        pista.SeguirLinhaPID(200, 20, 0.4f, 5);
     }
     
 }
