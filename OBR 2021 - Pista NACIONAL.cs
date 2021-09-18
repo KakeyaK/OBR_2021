@@ -5,11 +5,20 @@ void Main()
 {       
     pista pista = new pista();
     bc.ActuatorSpeed(150);
-    mov.MoverEscavadora(80);
+    mov.MoverEscavadora(85);
 
-    //Pista
+    // Pista
     while (estagio == "Pista")
     {   
+        if(bc.Inclination() > 10 && bc.Inclination() < 350){
+            velocidade = 130;
+            bc.PrintConsole(2, velocidade.ToString());
+        }
+        else{
+            velocidade = 200;
+            bc.PrintConsole(2, velocidade.ToString());
+        }
+
         // Verde direita
         if(bc.ReturnColor(1 - 1) == "GREEN"){
             pista.GirarVerde("direita");
@@ -18,17 +27,16 @@ void Main()
         if(bc.ReturnColor(2 - 1) == "GREEN"){
             pista.GirarVerde("esquerda");
         }
-        // Gangorra
-        if (bc.Inclination() > 330 && bc.Inclination() < 346)
-        {
-            aux.Tick();
-            if (bc.Inclination() > 330 && bc.Inclination() < 346)
-            {
-                pista.Gangorra();
-                break;
-            }
+        // // Gangorra
+        // if (bc.Inclination() > 330 && bc.Inclination() < 346)
+        // {
+        //     aux.Tick();
+        //     if (bc.Inclination() > 330 && bc.Inclination() < 346)
+        //     {
+        //         pista.Gangorra();
+        //     }
 
-        }
+        // }
         pista.SeguirLinhaPID(velocidade, 20, 1.5f, 10);
     }    
 }
@@ -86,49 +94,51 @@ class pista
     }
 
     static public void Girar90(string lado){
-        bc.MoveFrontal(200, 200);
-        bc.wait(400);
-        
         if(lado == "esquerda"){
-            bc.PrintConsole(1, "Giro para esquerda");
-            
-            float anguloInicial = bc.Compass();
-            while(aux.MedirLuz(1) > escuro){
-                bc.MoveFrontal(900, -900);
-                aux.Tick();
-            }
-            bc.MoveFrontal(-900, 900);
-            bc.Wait(350);
+            mov.MoverNoCirculo()
         }
-        
         else if(lado == "direita"){
-            bc.PrintConsole(1, "Giro para direita");
 
-            float anguloInicial = bc.Compass();
-            while(aux.MedirLuz(2) > escuro){
-                bc.MoveFrontal(-900, 900);
-                aux.Tick();
-
-                // if(bc.Compass()) girar usando aproximação de angulo + 90
-            }
-            bc.MoveFrontal(900, -900);
-            bc.Wait(350);
         }
-
-        // bc.MoveFrontal(-200, -200);
-        // bc.wait(150);
     }
+
+    // static public void Girar90(string lado){
+    //     bc.MoveFrontal(200, 200);
+    //     bc.wait(150);
+        
+    //     if(lado == "esquerda"){
+    //         bc.PrintConsole(1, "Giro para esquerda");
+            
+    //         float anguloInicial = bc.Compass();
+    //         while(aux.MedirLuz(1) > escuro){
+    //             bc.MoveFrontal(970, -970);
+    //         }
+    //         bc.MoveFrontal(-900, 900);
+    //         bc.Wait(350);
+    //     }
+        
+    //     else if(lado == "direita"){
+    //         bc.PrintConsole(1, "Giro para direita");
+
+    //         float anguloInicial = bc.Compass();
+    //         while(aux.MedirLuz(2) > escuro){
+    //             bc.MoveFrontal(-970, 970);
+    //             // if(bc.Compass()) girar usando aproximação de angulo + 90
+    //         }
+    //         bc.MoveFrontal(900, -900);
+    //         bc.Wait(350);
+    //     }
+    // }
 
     static public void GirarVerde(string lado){
         bc.MoveFrontal(200, 200);
-        bc.wait(400);
+        bc.wait(500);
         
         if(lado == "esquerda"){
             bc.PrintConsole(1, "Verde para esquerda");
             mov.MoverNoCirculo(-35);
             while(aux.MedirLuz(1) > escuro){
-                bc.MoveFrontal(900, -900);
-                aux.Tick();
+                bc.MoveFrontal(970, -970);
             }
             bc.MoveFrontal(-900, 900);
             bc.Wait(350);
@@ -138,8 +148,7 @@ class pista
             bc.PrintConsole(1, "Verde para direita");
             mov.MoverNoCirculo(35);
             while(aux.MedirLuz(2) > escuro){
-                bc.MoveFrontal(-900, 900);
-                aux.Tick();
+                bc.MoveFrontal(-970, 970);
             }
             bc.MoveFrontal(900, -900);
             bc.Wait(350);
@@ -183,14 +192,28 @@ class MatAng
     - MatematicaCirculo
     */ 
     
-    static public int AproximarAngulo(float angulo)
+    static public int AproximarAngulo(float angulo, int aproximacao = 1)
     {
-    // Retornar aproximação de ângulo para um dos pontos cardeais
-        if (angulo >= 315 || angulo < 45) return 0;
-        if (angulo >= 45 && angulo < 135) return 90;
-        if (angulo >= 135 && angulo < 225) return 180;
-        if (angulo >= 225 && angulo < 315) return 270;
-        else return 0;
+        if(aproximacao == 1){
+            // Retornar aproximação de ângulo para um dos pontos cardeais
+            if (angulo >= 315 || angulo < 45) return 0;
+            if (angulo >= 45 && angulo < 135) return 90;
+            if (angulo >= 135 && angulo < 225) return 180;
+            if (angulo >= 225 && angulo < 315) return 270;
+            else return 0;
+        }
+        else if(aproximacao == 2){
+            // Retornar aproximação de ângulo em intervalos de 45º
+            if (angulo >= 337.5 && angulo < 22.5) return 0;
+            if (angulo >= 22.5 && angulo < 67.5) return 45;
+            if (angulo >= 67.5 && angulo < 112.5) return 90;
+            if (angulo >= 112.5 && angulo < 157.5) return 135;
+            if (angulo >= 157.5 && angulo < 202.5) return 180;
+            if (angulo >= 202.5 && angulo < 247.5) return 225;
+            if (angulo >= 247.5 && angulo < 292.5) return 270;
+            if (angulo >= 292.5 && angulo < 337.5) return 315;
+            else return 0;
+        }
     }
     
     static public float MatematicaCirculo(float angulo)
@@ -228,7 +251,7 @@ class aux
         /*
         Tempo de espera entre ações na programação
         */
-        bc.Wait(30);
+        bc.Wait(10);
     }
 
     static public float MedirLuz(int sensor)
@@ -236,7 +259,12 @@ class aux
         /* 
         Filtro da função de medir luz do robô
         */
-        return bc.Lightness(sensor - 1);
+        if(bc.Lightness(sensor - 1) > 65){
+            return 65;
+        }
+        else{
+            return bc.Lightness(sensor - 1);
+        }
     }
 
 }
@@ -278,68 +306,71 @@ class mov
         /*
         A partir do cáculo de velocidade por segundo do robô se move uma quantidade desejada
         Exige calibração prévia
+
+        velocidade do robô 1 a 200 de força = 54zm/s
         */
 
         if (distancia > 0)
         {
             bc.MoveFrontal(200, 200);
-            bc.Wait((int)(distancia / 39.64 * 1000));
+            bc.Wait((int)(distancia / 54 * 1000));
         }
         else
         {
             bc.MoveFrontal(-200, -200);
-            bc.Wait((int)(-distancia / 39.64 * 1000));
+            bc.Wait((int)(-distancia / 54 * 1000));
         }
     }
     
-    static public void MoverBalde(double alvoBalde)
+    static public void MoverBalde(float alvoBalde)
     {   
         /*
         Move o balde do robô até o ângulo desejado
         */
-
-        if (Math.Sin(bc.AngleScoop() * Math.PI / 180) > Math.Sin(alvoBalde * Math.PI / 180))
-        {
-            //enquanto o seno da posicao atual da escavadora for menor q o seno da posicao alvo, a escavadora sobe
-            while (Math.Sin(bc.AngleScoop() * Math.PI / 180) > Math.Sin(alvoBalde * Math.PI / 180))
+        // Verifica se o ângulo desejado está no intervalo do que o robô consegue alcançar.
+        if(alvoBalde > 0 && alvoBalde < 12){
+            if (bc.AngleScoop() > alvoBalde)
             {
-                bc.TurnActuatorDown(30);
+                while (bc.AngleScoop() > alvoBalde)
+                {
+                    bc.TurnActuatorUp(30);
+                }
             }
-        }
 
-        else
-        {
-            //enquanto o seno da posicao atual da escavadora for maior q o seno da posicao alvo, a escavadora desce
-            while (Math.Sin(bc.AngleScoop() * Math.PI / 180) < Math.Sin(alvoBalde * Math.PI / 180))
+            else
             {
-
-                bc.TurnActuatorUp(30);
+                //enquanto o seno da posicao atual da escavadora for maior q o seno da posicao alvo, a escavadora desce
+                while (bc.AngleScoop() < alvoBalde)
+                {
+                    bc.TurnActuatorDown(30);
+                }
             }
         }
     }
 
-    static public void MoverEscavadora(double alvoEscavadora)
+    static public void MoverEscavadora(float alvoEscavadora)
     {   
-        /* 
-        Move a escavadora do robô até o ângulo desejado
+        /*
+        Move o braço da escavadora até o ângulo desejado
         */
-        if (Math.Sin(bc.AngleActuator() * Math.PI / 180) > Math.Sin(alvoEscavadora * Math.PI / 180))
-        {
-            //enquanto o seno da posicao atual da escavadora for menor q o seno da posicao alvo, a escavadora sobe
-            while (Math.Sin(bc.AngleActuator() * Math.PI / 180) > Math.Sin(alvoEscavadora * Math.PI / 180))
-            {
-                //A escavadora tem os angulos invertidos :P
 
-                bc.ActuatorUp(30);
+        // Verifica se o ângulo desejado está no intervalo do que o robô consegue alcançar.
+        if(alvoEscavadora >= 0 && alvoEscavadora < 90){
+            if (bc.AngleActuator() > alvoEscavadora)
+            {
+                while (bc.AngleActuator() > alvoEscavadora)
+                {
+                    bc.ActuatorDown(10);
+                }
             }
-        }
-        else
-        {
-            //enquanto o seno da posicao atual da escavadora for maior q o seno da posicao alvo, a escavadora desce
-            while (Math.Sin(bc.AngleActuator() * Math.PI / 180) < Math.Sin(alvoEscavadora * Math.PI / 180))
-            {
 
-                bc.ActuatorDown(30);
+            else
+            {
+                //enquanto o seno da posicao atual da escavadora for maior q o seno da posicao alvo, a escavadora desce
+                while (bc.AngleActuator() < alvoEscavadora)
+                {
+                    bc.ActuatorUp(10);
+                }
             }
         }
     }
