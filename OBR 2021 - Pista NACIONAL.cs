@@ -1,20 +1,36 @@
 int velocidade = 170;
+string estagio = "Pista";
 
 void Main()
-{   
+{       
     pista pista = new pista();
-    while (true)
-    {
-        pista.SeguirLinhaPID(200, 20, 0.4f, 5);
+    bc.ActuatorSpeed(150);
+    mov.MoverEscavadora(80);
 
+    //Pista
+    while (estagio == "Pista")
+    {   
+        // Verde direita
         if(bc.ReturnColor(1 - 1) == "GREEN"){
             pista.GirarVerde("direita");
         }
+        // Verde Esquerda
         if(bc.ReturnColor(2 - 1) == "GREEN"){
             pista.GirarVerde("esquerda");
         }
+        // Gangorra
+        if (bc.Inclination() > 330 && bc.Inclination() < 346)
+        {
+            aux.Tick();
+            if (bc.Inclination() > 330 && bc.Inclination() < 346)
+            {
+                pista.Gangorra();
+                break;
+            }
+
+        }
         pista.SeguirLinhaPID(velocidade, 20, 1.5f, 10);
-    
+    }    
 }
 
 class pista
@@ -128,6 +144,34 @@ class pista
             bc.MoveFrontal(900, -900);
             bc.Wait(350);
         }
+    }
+
+    static public void Gangorra()
+    {
+        //variaves para checar a inclinação
+        float val1 = 30;
+        float val2 = 30;
+
+        mov.MoverProAngulo(MatAng.AproximarAngulo(bc.Compass()), 500);
+
+        while (val2 - val1 < 4)
+        {
+            bc.PrintConsole(1, "Gangorra");
+            bc.MoveFrontal(150, 150);
+            val1 = bc.Inclination();
+            bc.Wait(500);
+            val2 = bc.Inclination();
+        }
+
+        bc.PrintConsole(1, "Gangorra Caindo...");
+        bc.MoveFrontal(100, 100);
+        bc.Wait(800);
+
+        bc.PrintConsole(1, "Sai");
+        bc.MoveFrontal(0, 0);
+        aux.Tick();
+
+
     }
 }
 

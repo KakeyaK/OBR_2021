@@ -143,7 +143,7 @@ float MedirLuz(int sensor){
 // ===============
 
 //balde = 318, escavadora = 290
-static public void AjustarAnguloBalde(){
+void AjustarAnguloBalde(){
     MoverBalde(318);
 }
 
