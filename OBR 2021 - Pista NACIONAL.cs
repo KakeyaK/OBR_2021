@@ -7,8 +7,9 @@ void Main()
 {       
     pista pista = new pista();
 
+    bc.SetPrecision(4);
     // 0 - 100, default = 25
-    bc.ColorSensibility(30);
+    bc.ColorSensibility(35);
 
     bc.ActuatorSpeed(150);
     mov.MoverEscavadora(85);
@@ -43,7 +44,7 @@ void Main()
         //     }
 
         // }
-        pista.SeguirLinhaPID(velocidade, 20, 1.5f, 10);
+        pista.SeguirLinhaPID(velocidade, 20, 0, 10);
     }    
 }
 
@@ -58,7 +59,7 @@ class pista
     
     public void SeguirLinhaPID(float velocidade, float kp, float ki, float kd)
     {
-        float sensibilidade90 = 53;
+        float sensibilidade90 = 45;
 
         // matemática PID
         error = aux.MedirLuz(1) - aux.MedirLuz(2);
@@ -81,27 +82,27 @@ class pista
         if (movimento > 1000 - velocidade) { movimento = 1000 - velocidade; }
 
         // Console
-        bc.PrintConsole(0, "Error: " + error.ToString("F") + " M: " + movimento.ToString());
+        bc.PrintConsole(0, "Error: " + error.ToString("F") + " lastError: " + lastError.ToString("F") + " M: " + movimento.ToString());
         bc.PrintConsole(1, "Integral: " + integral.ToString() + " Integro Parado: " + pararIntegro.ToString());
-        // bc.PrintConsole(2, "Derivate: " + derivate.ToString("F"));
+        bc.PrintConsole(2, "Derivate: " + derivate.ToString("F"));
 
         // Movimento
         bc.MoveFrontal(velocidade + movimento, velocidade - movimento);
         aux.Tick();
+        
+        if(error > sensibilidade90 && lastError > sensibilidade90){
+            pista.Girar90("esquerda");
+        }
+        else if(error < -sensibilidade90 && lastError < -sensibilidade90){
+            pista.Girar90("direita");
+        }
 
         // Atualização de variável
         lastError = error;
-        
-        if(error > sensibilidade90){
-            pista.Girar90("esquerda");
-        }
-        else if(error < -sensibilidade90){
-            pista.Girar90("direita");
-        }
     }
 
     static public void Girar90(string lado){
-        mov.MoverPorUnidade(16);
+        mov.MoverPorUnidade(15);
         
         float anguloInicial = bc.Compass();
         bool retornando = false;
@@ -109,14 +110,18 @@ class pista
         if(lado == "esquerda"){
             bc.PrintConsole(1, "Giro para esquerda");
             
+            mov.MoverNoCirculo(-5);
+
             while(aux.MedirLuz(1) > escuro){
                 if(matAng.MatematicaCirculo(anguloInicial - bc.Compass()) > 160){
+                    bc.PrintConsole(1, "Retornando giro para esquerda");
                     mov.MoverNoCirculo(75);
                     retornando = true;
                     break;
                 }
                 bc.MoveFrontal(970, -970);
             }
+
             if(retornando == false){
                 bc.MoveFrontal(-900, 900);
                 bc.Wait(350);
@@ -126,14 +131,18 @@ class pista
         else if(lado == "direita"){
             bc.PrintConsole(1, "Giro para direita");
 
+            mov.MoverNoCirculo(5);
+            
             while(aux.MedirLuz(2) > escuro){
                 if(matAng.MatematicaCirculo(bc.Compass() - anguloInicial) > 160){
+                    bc.PrintConsole(1, "Retornando giro para direita");
                     mov.MoverNoCirculo(-75);
                     retornando = true;
                     break;
                 }
                 bc.MoveFrontal(-970, 970);
             }
+
             if(retornando == false){
                 bc.MoveFrontal(900, -900);
                 bc.Wait(350);
@@ -141,8 +150,9 @@ class pista
         }
 
         if(retornando == false){
-            mov.MoverPorUnidade(-10);
+            mov.MoverPorUnidade(-5);
         }
+
         bc.MoveFrontal(0, 0);
     }
 
@@ -169,6 +179,8 @@ class pista
             bc.MoveFrontal(900, -900);
             bc.Wait(350);
         }
+
+        bc.MoveFrontal(0, 0);
     }
 
     static public void Gangorra()
@@ -316,9 +328,28 @@ class mov
                 aux.Tick();
             }
         }
+        bc.MoveFrontal(0, 0);
     }
 
-    static public void MoverPorUnidade(float distancia)
+    static public void MoverPorUnidadeRotacao(float distancia)
+    {
+        /*
+            Utiliza distância por rotações para mover o robô uma quantidade determinada. 1 rotação ~= 2,066 zm
+        */
+
+        if (distancia > 0)
+        {
+            bc.MoveFrontalRotations(200, distancia / 2.066);
+        }
+        else
+        {
+            bc.MoveFrontalRotation(-200, distancia / 2.066);
+            
+        }
+        bc.Move(0, 0);
+    }
+
+    static public void MoverPorUnidadeTempo(float distancia)
     {
         /*
         A partir do cáculo de velocidade por segundo do robô se move uma quantidade desejada
@@ -337,6 +368,7 @@ class mov
             bc.MoveFrontal(-200, -200);
             bc.Wait((int)(-distancia / 54 * 1000));
         }
+        bc.MoveFrontal(0, 0);
     }
     
     static public void MoverBalde(float alvoBalde)
@@ -463,6 +495,7 @@ class mov
             }
         }
 
+        bc.MoveFrontal(0, 0);
         return linha;
     }
 
@@ -492,6 +525,7 @@ class mov
             }
         }
 
+        bc.MoveFrontal(0, 0);
         return linha;
     }
 
