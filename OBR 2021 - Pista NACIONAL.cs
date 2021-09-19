@@ -1,23 +1,29 @@
+//Sensibilidade ao erro no tempo.
+
 int velocidade = 170;
 string estagio = "Pista";
 
 void Main()
 {       
     pista pista = new pista();
+
+    // 0 - 100, default = 25
+    bc.ColorSensibility(30);
+
     bc.ActuatorSpeed(150);
     mov.MoverEscavadora(85);
 
     // Pista
     while (estagio == "Pista")
-    {   
-        if(bc.Inclination() > 10 && bc.Inclination() < 350){
-            velocidade = 130;
-            bc.PrintConsole(2, velocidade.ToString());
+    {    
+        // Diminuir velocidade no plano inclinado
+        if (bc.Inclination() > 10 && bc.Inclination() < 350){
+            velocidade = 100;
         }
         else{
             velocidade = 200;
-            bc.PrintConsole(2, velocidade.ToString());
         }
+        bc.PrintConsole(3, velocidade.ToString());
 
         // Verde direita
         if(bc.ReturnColor(1 - 1) == "GREEN"){
@@ -43,15 +49,16 @@ void Main()
 
 class pista
 {
+    public static int escuro = 20;
+
     // Variáveis PID
     private float error = 0, lastError = 0, integral = 0, derivate = 0;
     private float movimento;
     private bool pararIntegro;
-    static int escuro = 20;
     
     public void SeguirLinhaPID(float velocidade, float kp, float ki, float kd)
     {
-        float sensibilidade90 = 37;
+        float sensibilidade90 = 53;
 
         // matemática PID
         error = aux.MedirLuz(1) - aux.MedirLuz(2);
@@ -94,41 +101,50 @@ class pista
     }
 
     static public void Girar90(string lado){
+        mov.MoverPorUnidade(16);
+        
+        float anguloInicial = bc.Compass();
+        bool retornando = false;
+
         if(lado == "esquerda"){
-            mov.MoverNoCirculo()
-        }
-        else if(lado == "direita"){
-
-        }
-    }
-
-    // static public void Girar90(string lado){
-    //     bc.MoveFrontal(200, 200);
-    //     bc.wait(150);
-        
-    //     if(lado == "esquerda"){
-    //         bc.PrintConsole(1, "Giro para esquerda");
+            bc.PrintConsole(1, "Giro para esquerda");
             
-    //         float anguloInicial = bc.Compass();
-    //         while(aux.MedirLuz(1) > escuro){
-    //             bc.MoveFrontal(970, -970);
-    //         }
-    //         bc.MoveFrontal(-900, 900);
-    //         bc.Wait(350);
-    //     }
+            while(aux.MedirLuz(1) > escuro){
+                if(matAng.MatematicaCirculo(anguloInicial - bc.Compass()) > 160){
+                    mov.MoverNoCirculo(75);
+                    retornando = true;
+                    break;
+                }
+                bc.MoveFrontal(970, -970);
+            }
+            if(retornando == false){
+                bc.MoveFrontal(-900, 900);
+                bc.Wait(350);
+            }
+        }
         
-    //     else if(lado == "direita"){
-    //         bc.PrintConsole(1, "Giro para direita");
+        else if(lado == "direita"){
+            bc.PrintConsole(1, "Giro para direita");
 
-    //         float anguloInicial = bc.Compass();
-    //         while(aux.MedirLuz(2) > escuro){
-    //             bc.MoveFrontal(-970, 970);
-    //             // if(bc.Compass()) girar usando aproximação de angulo + 90
-    //         }
-    //         bc.MoveFrontal(900, -900);
-    //         bc.Wait(350);
-    //     }
-    // }
+            while(aux.MedirLuz(2) > escuro){
+                if(matAng.MatematicaCirculo(bc.Compass() - anguloInicial) > 160){
+                    mov.MoverNoCirculo(-75);
+                    retornando = true;
+                    break;
+                }
+                bc.MoveFrontal(-970, 970);
+            }
+            if(retornando == false){
+                bc.MoveFrontal(900, -900);
+                bc.Wait(350);
+            }
+        }
+
+        if(retornando == false){
+            mov.MoverPorUnidade(-10);
+        }
+        bc.MoveFrontal(0, 0);
+    }
 
     static public void GirarVerde(string lado){
         bc.MoveFrontal(200, 200);
@@ -161,7 +177,7 @@ class pista
         float val1 = 30;
         float val2 = 30;
 
-        mov.MoverProAngulo(MatAng.AproximarAngulo(bc.Compass()), 500);
+        mov.MoverProAngulo(matAng.AproximarAngulo(bc.Compass()), 500);
 
         while (val2 - val1 < 4)
         {
@@ -184,7 +200,7 @@ class pista
     }
 }
 
-class MatAng
+class matAng
 {
     /*
     ====== Funções de Matemática com Ângulos ======
@@ -200,7 +216,6 @@ class MatAng
             if (angulo >= 45 && angulo < 135) return 90;
             if (angulo >= 135 && angulo < 225) return 180;
             if (angulo >= 225 && angulo < 315) return 270;
-            else return 0;
         }
         else if(aproximacao == 2){
             // Retornar aproximação de ângulo em intervalos de 45º
@@ -212,13 +227,15 @@ class MatAng
             if (angulo >= 202.5 && angulo < 247.5) return 225;
             if (angulo >= 247.5 && angulo < 292.5) return 270;
             if (angulo >= 292.5 && angulo < 337.5) return 315;
-            else return 0;
         }
+
+        return 0;
     }
     
     static public float MatematicaCirculo(float angulo)
     {
-    // Faz matemática em ciclo, retornando o valor de deslocamento no ciclo trigonométrico.
+        // Faz matemática em ciclo, retornando o valor de deslocamento no ciclo trigonométrico.
+        // Em resumo retorna a distância angular entre um ângulo específico e o ângulo 0
         if (angulo >= 360)
         {
             return angulo - 360;
@@ -226,7 +243,7 @@ class MatAng
         else if (angulo < 0)
         {
 
-            return (float)(-360 * Math.Floor((double)(angulo / 360)) + angulo);
+            return (float)(-1 * 360 * Math.Floor((double)(angulo / 360)) + angulo);
         }
         else
         {
@@ -375,7 +392,7 @@ class mov
         }
     }
 
-    static public void MoverNoCirculo(float anguloMovimento, float velocidade = 950)
+    static public bool MoverNoCirculo(float anguloMovimento, float velocidade = 950)
     {
         /*
         Girar por graus, independente da orientação
@@ -384,7 +401,10 @@ class mov
         Margem de erro > 5º
         Máximo de movimento em uma direção = 355
         */
-        
+
+        // Verificar se passou por cima de uma linha
+        bool linha = false;    
+    
         float anguloInicial = bc.Compass();
         // Movimento positivo - sentido horário
         if (anguloMovimento > 0)
@@ -400,7 +420,7 @@ class mov
                 while (bc.Compass() > anguloInicial + anguloMovimento - 355 || bc.Compass() < anguloInicial + anguloMovimento - 360)
                 {
                     bc.MoveFrontal(-velocidade, velocidade);
-                    aux.Tick();
+                    if(aux.MedirLuz(1) < pista.escuro) linha = true;
                 }
             }
             // Movimento regular
@@ -409,11 +429,11 @@ class mov
                 while (bc.Compass() < anguloInicial + anguloMovimento)
                 {
                     bc.MoveFrontal(-velocidade, velocidade);
-                    aux.Tick();
+                    if(aux.MedirLuz(1) < pista.escuro) linha = true;
                 }
             }
         }
-        else
+        else if (anguloMovimento < 0)
         {
             // Invertendo o sinal do ângulo pra facilitar a visualização da matemática
             anguloMovimento = anguloMovimento * -1;
@@ -425,11 +445,11 @@ class mov
 
             // Movimento passa pelo limite de 0/360º
             if (anguloInicial < anguloMovimento)
-            {
+            {   
                 while (bc.Compass() < anguloInicial + 355 - anguloMovimento || bc.Compass() > anguloInicial + 360 - anguloMovimento)
                 {
                     bc.MoveFrontal(velocidade, -velocidade);
-                    aux.Tick();
+                    if(aux.MedirLuz(2) < pista.escuro) linha = true;
                 }
             }
             //Movimento regular
@@ -438,32 +458,41 @@ class mov
                 while (bc.Compass() > anguloInicial - anguloMovimento)
                 {
                     bc.MoveFrontal(velocidade, -velocidade);
-                    aux.Tick();
+                    if(aux.MedirLuz(2) < pista.escuro) linha = true;
                 }
             }
         }
+
+        return linha;
     }
 
-    static public void MoverProAngulo(float angulo, float velocidade)
+    static public bool MoverProAngulo(float angulo, float velocidade = 950)
     {   
         /*
         Se locomove até o ângulo desejado. 
         Apenas valores positivos
-        
-        TOMAR CUIDADO COM PRECISÃO
         */
+        bool linha = false;
 
-        if (MatAng.MatematicaCirculo(angulo - bc.Compass()) < 180)
-        {
-            //girar no sentido horário
-            MoverNoCirculo(MatAng.MatematicaCirculo(angulo - bc.Compass()), velocidade);
+        if(angulo == 360) angulo = 0;
+
+        if(angulo >= 0 && angulo < 360){
+            float anguloDiferenca = matAng.MatematicaCirculo(angulo - bc.Compass());
+            
+            if (anguloDiferenca < 180)
+            {
+                //girar no sentido horário
+                linha = MoverNoCirculo(anguloDiferenca, velocidade);
+            }
+
+            else
+            {
+                //girar no sentido anti-horário
+                linha = MoverNoCirculo(anguloDiferenca - 360, velocidade);
+            }
         }
 
-        else
-        {
-            //girar no sentido anti-horário
-            MoverNoCirculo(MatAng.MatematicaCirculo(angulo - bc.Compass()) - 360, velocidade);
-        }
+        return linha;
     }
 
 }
