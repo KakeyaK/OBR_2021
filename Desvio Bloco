@@ -126,7 +126,7 @@ void DesvioUltrassom(){
             Tick();
         }
     }
-    
+   
     bc.PrintConsole(2, "Linha detectada");
 
     bc.MoveFrontal(velocidadeFrontal, velocidadeFrontal);
