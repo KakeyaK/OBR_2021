@@ -11,9 +11,9 @@ string estagio = "Pista";
 
 void Main() 
 {   
-    pista pista = new pista(35, // Sensibilidade do giro de 90º. > "escuroPreto2" !!! 
-                            5); // Sensibilidade de erro para a recuperacao de linha  
-    pista.escuroLinha = 25; pista.escuroPreto2 = 35; pista.escuroIdentLinha = 35; 
+    pista pista = new pista(35, // Sensibilidade do giro de 90º. > "escuroPreto2" !!!  (quanto maior menos sensível)
+                            5); // Sensibilidade de erro para a recuperacao de linha (quanto maior mais sensível) 
+    pista.escuroLinha = 25; pista.escuroPreto2 = 35; pista.escuroIdentLinha = 45; 
 
     bc.SetPrecision(4); 
     bc.ColorSensibility(30); // 0 - 100, default = 33
@@ -24,8 +24,14 @@ void Main()
     // Pista
     while (estagio == "Pista")
     {    
-
         // bc.PrintConsole(0, "CE: " + bc.ReturnColor(0) + " CD: " + bc.ReturnColor(1));
+
+        if(pista.VerResgate()){
+            bc.PrintConsole(2, "Começando o resgate");
+            estagio = "Resgate";
+            break;
+        }
+
         if(aux.MedirLuz(1) < pista.escuroPreto2 && aux.MedirLuz(2) < pista.escuroPreto2){
             aux.Preto2();
         }
@@ -115,23 +121,32 @@ class pista
         bc.Move(velocidade - movimento, velocidade + movimento);
         aux.Tick();
         
+        // Atualização de variável
+        lastError = error;
+
         // ===== GIROS ======
         string giro;
         // Lado esquerdo
         if(error > sensibilidade90 && Math.Abs(error - lastError) < 1){
             giro = aux.tipoGiro90("esquerda");
             bc.PrintConsole(2, "Tipo do giro: " + giro);
+            if(giro == "preto2"){
+                return;
+                aux.Preto2();
+            } 
             pista.Girar90("esquerda", giro);
         }
         // Lado direito
         else if(error < -sensibilidade90 && Math.Abs(error - lastError) < 1){
             giro = aux.tipoGiro90("direita");
             bc.PrintConsole(2, "Tipo do giro: " + giro);
+            if(giro == "preto2"){
+                aux.Preto2();
+                return;
+            } 
             pista.Girar90("direita", giro);
         }
 
-        // Atualização de variável
-        lastError = error;
 
         // ==== Recuperacao de Linha ====
         /*
@@ -163,10 +178,7 @@ class pista
             bc.PrintConsole(1, "Me perdi!");
             mov.MoverNoCirculo(-anguloGiro);
 
-            for(int _ = 0; _ < 100; _++){
-                bc.Move(-150, -150);
-                bc.Wait(5);
-            }
+            bc.MoveFrontalRotations(-150, 25);
 
             mov.MoverProAngulo(matAng.AproximarAngulo(bc.Compass()));
         }
@@ -192,7 +204,6 @@ class pista
 
             float anguloInicial = bc.Compass();
             float anguloGiro; // usado para verificar se é necessário retornar
-            bool retornando = false; // Controle para verificar se o giro passou do limite adequado
 
             if(lado == "esquerda"){
                 bc.PrintConsole(2, "Giro para esquerda");
@@ -214,7 +225,7 @@ class pista
                 while(anguloGiro < 145 || anguloGiro > 147);
 
                 bc.PrintConsole(2, "Retornando giro para esquerda " + anguloGiro.ToString());
-                mov.MoverNoCirculo(65);
+                mov.MoverNoCirculo(75);
             }
             
             else if(lado == "direita"){
@@ -237,7 +248,7 @@ class pista
                 while(anguloGiro < 145 || anguloGiro > 147);
 
                 bc.PrintConsole(2, "Retornando giro para direita " + anguloGiro.ToString());
-                mov.MoverNoCirculo(-65);
+                mov.MoverNoCirculo(-75);
             }
         }
         else if(giro == "circulo"){
@@ -264,7 +275,7 @@ class pista
 
                     anguloGiro = matAng.MatematicaCirculo(anguloInicial - bc.Compass()); 
                 }
-                while(anguloGiro < 10 || anguloGiro > 15);
+                while(anguloGiro < 8 || anguloGiro > 13);
 
 
             }
@@ -286,7 +297,7 @@ class pista
 
                     anguloGiro = matAng.MatematicaCirculo(bc.Compass() - anguloInicial); 
                 }
-                while(anguloGiro < 10 || anguloGiro > 15);
+                while(anguloGiro < 8 || anguloGiro > 13);
             }
         }
 
@@ -410,6 +421,35 @@ class pista
         mov.MoverPorUnidadeRotacao(47);
         mov.MoverEscavadora(85);
         mov.MoverPorUnidadeRotacao(-35);
+    }
+
+    static public bool VerResgate(){
+        int countUltra = 0;
+        
+        if((bc.ReturnBlue(0) > 50 &&
+          (bc.ReturnGreen(0) > 40 && bc.ReturnGreen(0) < 50) &&
+          (bc.ReturnRed(0) > 40 && bc.ReturnRed(0) < 50)) &&
+          // =====
+          (bc.ReturnBlue(1) > 50 &&
+          (bc.ReturnGreen(1) > 40 && bc.ReturnGreen(1) < 50) &&
+          (bc.ReturnRed(1) > 40 && bc.ReturnRed(1) < 50)))
+          { 
+            bc.PrintConsole(2, "Vi a linha cinza");
+            mov.MoverPorUnidadeRotacao(30);
+            if(bc.Distance(0) < 380) countUltra++;
+            if(bc.Distance(1) < 380) countUltra++;
+            if(bc.Distance(2) < 380) countUltra++;
+            
+            if(countUltra >= 2){
+                return true;
+            }
+            else{
+                mov.MoverPorUnidadeRotacao(-30);
+            }
+
+          }
+        
+        return false;
     }
 }
 
@@ -632,7 +672,14 @@ class aux
         float anguloGiro = 0, anguloInicial;
         int sensibilidadeCirculo = 10; // se o giro for menor que esse valor ele é considerado um círculo
 
+        bc.MoveFrontalRotations(100, 0.7f);
+        if(aux.MedirLuz(1) < pista.escuroPreto2 && aux.MedirLuz(2) < pista.escuroPreto2){
+            bc.MoveFrontalRotations(-100, 0.7f);
+            return "preto2";
+        }
+
         aux.ChegarNoMeioDaLinha(lado);
+
         anguloInicial = bc.Compass();
 
         if(lado == "direita"){
@@ -652,16 +699,6 @@ class aux
                 anguloGiro = matAng.MatematicaCirculo(bc.Compass() - anguloInicial); 
             }
             while(anguloGiro < sensibilidadeCirculo + 5 || anguloGiro > sensibilidadeCirculo + 10);
-
-            if(anguloGiro < sensibilidadeCirculo){
-                bc.PrintConsole(2, "CIRCULO " + anguloGiro.ToString());
-                return "circulo";
-            } 
-            else{
-                bc.PrintConsole(2, "QUADRADO " + anguloGiro.ToString());
-                mov.MoverNoCirculo(-anguloGiro);
-                return "quadrado";
-            }
         }
         else if(lado == "esquerda"){
 
@@ -680,38 +717,44 @@ class aux
                 anguloGiro = matAng.MatematicaCirculo(anguloInicial - bc.Compass()); 
             }
             while(anguloGiro < sensibilidadeCirculo + 5 || anguloGiro > sensibilidadeCirculo + 10);
-
-            if(anguloGiro < sensibilidadeCirculo){
-                bc.PrintConsole(2, "CIRCULO " + anguloGiro.ToString());
-                return "circulo";
-            } 
-            else{
-                bc.PrintConsole(2, "QUADRADO " + anguloGiro.ToString());
-                mov.MoverNoCirculo(anguloGiro);
-                return "quadrado";
-            }
         }
-        return "";
-    }
 
+        if(anguloGiro > sensibilidadeCirculo && anguloGiro < 80){
+            bc.PrintConsole(3, "QUADRADO " + anguloGiro.ToString());
+            if(lado == "esquerda") mov.MoverNoCirculo(anguloGiro);
+            else mov.MoverNoCirculo(-anguloGiro);
+
+            return "quadrado";
+        }
+        else{
+            bc.PrintConsole(3, "CIRCULO " + anguloGiro.ToString());
+            return "circulo";
+        }
+    }
 
     static public void ChegarNoMeioDaLinha(string lado){
         bc.PrintConsole(2, "Indo pro meio da linha");
 
-        float luzInicial;
-        int controleTempo, sensor, forca = 30;
+        bc.Move(0, 0);
+        bc.Wait(100);
+
+        int controleTempo, sensor;
+        float luzAntiga, luzAtual = 0;
 
         if(lado == "esquerda") sensor = 2;
         else sensor = 1;
         
-        luzInicial = aux.MedirLuz(sensor);
-        controleTempo = bc.Timer();
-        
-        while(bc.Timer() < controleTempo + 600){
-            if(aux.MedirLuz(sensor) < 6) break;
-            if(aux.MedirLuz(sensor) > luzInicial) forca *= -1;
-            bc.Move(forca, forca);
-            bc.Wait(20);
+        luzAtual = aux.MedirLuz(sensor);
+
+
+        while(true){
+            bc.Move(-30, -30);
+            bc.Wait(7);
+         
+            luzAntiga = luzAtual;
+            luzAtual = aux.MedirLuz(sensor);
+            if(luzAtual < 4) break;
+            if(luzAtual > luzAntiga) break;
         }
     }
 }
