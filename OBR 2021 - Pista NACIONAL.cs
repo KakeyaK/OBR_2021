@@ -1,64 +1,107 @@
-string estagio = "Pista";
-
-
-
-// pista.escuroLinha
-
-// ===== Calibrações =====
-// Sensibilidade no giro de 90º
-// Sensibiliadde no Preto2
-// Sensibilidade nos retornos para o preto
+string estagio = "pista";
 
 void Main() 
 {   
+    // ===== Calibrações =====
     pista pista = new pista(35, // Sensibilidade do giro de 90º. > "escuroPreto2" !!!  (quanto maior menos sensível)
                             5); // Sensibilidade de erro para a recuperacao de linha (quanto maior mais sensível) 
     pista.escuroLinha = 25; pista.escuroPreto2 = 35; pista.escuroIdentLinha = 45; 
 
     bc.SetPrecision(4); 
+    // Importante calibrar cores para diferênciar kit de resgate do obstáculo
     bc.ColorSensibility(30); // 0 - 100, default = 33
     bc.ActuatorSpeed(150); // 0 - 150
 
+    // !Lembrar de calibrar a deteccao do resgate
+
+    // ===== Começo ======
     mov.MoverEscavadora(85);
 
-    // Pista
-    while (estagio == "Pista")
-    {    
-        // bc.PrintConsole(0, "CE: " + bc.ReturnColor(0) + " CD: " + bc.ReturnColor(1));
+    while(true){
 
-        if(pista.VerResgate()){
-            bc.PrintConsole(2, "Começando o resgate");
-            estagio = "Resgate";
-            break;
+        while (estagio == "pista")
+        {    
+            // bc.PrintConsole(0, "CE: " + bc.ReturnColor(0) + " CD: " + bc.ReturnColor(1));
+
+            if(pista.VerResgate()){
+                bc.PrintConsole(2, "Começando o resgate");
+                estagio = "resgate";
+                break;
+            }
+
+            if(aux.MedirLuz(1) < pista.escuroPreto2 && aux.MedirLuz(2) < pista.escuroPreto2){
+                aux.Preto2();
+            }
+
+            // Verde ambos
+            if((bc.ReturnColor(1 - 1) == "GREEN" || bc.ReturnColor(1 - 1) == "YELLOW" || bc.ReturnColor(1 - 1) == "CYAN") && 
+               (bc.ReturnColor(2 - 1) == "GREEN" || bc.ReturnColor(2 - 1) == "YELLOW" || bc.ReturnColor(2 - 1) == "CYAN"))
+            {
+                pista.GirarVerde("ambos");
+            }
+            // Verde direita
+            else if(bc.ReturnColor(1 - 1) == "GREEN" || bc.ReturnColor(1 - 1) == "YELLOW" || bc.ReturnColor(1 - 1) == "CYAN"){
+                if(aux.ProcurarMaisVerde("direita")) pista.GirarVerde("ambos");
+                else pista.GirarVerde("direita");
+            }
+            // Verde Esquerda
+            else if(bc.ReturnColor(2 - 1) == "GREEN" || bc.ReturnColor(2 - 1) == "YELLOW" || bc.ReturnColor(2 - 1) == "CYAN"){
+                if(aux.ProcurarMaisVerde("esquerda")) pista.GirarVerde("ambos");
+                else pista.GirarVerde("esquerda");
+            }
+
+            if(bc.Distance(0) > 14 && bc.Distance(0) <= 20){
+                pista.Desvio();
+            }
+
+            if(bc.ReturnColor(2) == "CYAN"){
+                pista.PegarKit();
+            }
+
+            aux.ContarGangorra();
+            pista.Gangorra();
+
+            pista.SeguirLinhaPID(150, 22, 0.03f, 20);
+        }    
+
+        while (estagio == "resgate"){
+            bc.Move(0, 0);
+            bc.Wait(10);
         }
 
-        if(aux.MedirLuz(1) < pista.escuroPreto2 && aux.MedirLuz(2) < pista.escuroPreto2){
-            aux.Preto2();
+        while(estagio == "pistaFinal"){
+            if(aux.MedirLuz(1) < pista.escuroPreto2 && aux.MedirLuz(2) < pista.escuroPreto2){
+                aux.Preto2();
+            }
+
+            // Verde direita
+            if(bc.ReturnColor(1 - 1) == "GREEN" || bc.ReturnColor(1 - 1) == "YELLOW" || bc.ReturnColor(1 - 1) == "CYAN"){
+                pista.GirarVerde("direita");
+            }
+            // Verde Esquerda
+            if(bc.ReturnColor(2 - 1) == "GREEN" || bc.ReturnColor(2 - 1) == "YELLOW" || bc.ReturnColor(2 - 1) == "CYAN"){
+                pista.GirarVerde("esquerda");
+            }
+
+            if(bc.Distance(0) <= 20){
+                pista.Desvio();
+            }
+
+            if(bc.ReturnColor(0) == "RED" && bc.ReturnColor(1) == "RED"){
+                bc.Move(0, 0);
+                bc.Wait(1000000);
+            }
+
+            pista.Gangorra();
+
+            pista.SeguirLinhaPID(150, 22, 0.03f, 20);
+
         }
 
-        // Verde direita
-        if(bc.ReturnColor(1 - 1) == "GREEN" || bc.ReturnColor(1 - 1) == "YELLOW" || bc.ReturnColor(1 - 1) == "CYAN"){
-            pista.GirarVerde("direita");
-        }
+    }
 
-        // Verde Esquerda
-        if(bc.ReturnColor(2 - 1) == "GREEN" || bc.ReturnColor(2 - 1) == "YELLOW" || bc.ReturnColor(2 - 1) == "CYAN"){
-            pista.GirarVerde("esquerda");
-        }
-
-        if(bc.Distance(0) <= 20){
-			pista.Desvio();
-		}
-
-        if(bc.ReturnColor(2) == "CYAN"){
-            pista.PegarKit();
-        }
-
-        pista.Gangorra();
-
-        pista.SeguirLinhaPID(150, 22, 0.03f, 20);
-    }    
 }
+
 
 class pista
 {    
@@ -76,7 +119,7 @@ class pista
     private int sensibilidadeErroRecuperacao;
 
     // Variáveis Gangorra
-    public static int counter = 0;
+    public static int counterGangorra = 0;
     public static int inclinacaoAtual = 360, inclinacaoAntiga = 360, inclinacaoAntigassa = 360;
 
     // Método construtor
@@ -131,8 +174,8 @@ class pista
             giro = aux.tipoGiro90("esquerda");
             bc.PrintConsole(2, "Tipo do giro: " + giro);
             if(giro == "preto2"){
-                return;
                 aux.Preto2();
+                return;
             } 
             pista.Girar90("esquerda", giro);
         }
@@ -331,6 +374,11 @@ class pista
             }
             mov.MoverNoCirculo(10);
         }
+
+        else if(lado == "ambos"){
+            bc.PrintConsole(2, "Volta verde");
+            mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() + 180)));
+        }
     }
 
     static public void Gangorra(){
@@ -340,26 +388,17 @@ class pista
 
         */
 
-        // bc.PrintConsole(2, counter.ToString() + " " + inclinacaoAtual.ToString("F2") + " " + inclinacaoAntiga.ToString("F2" ));
+        // bc.PrintConsole(2, counterGangorra.ToString() + " " + inclinacaoAtual.ToString("F2") + " " + inclinacaoAntiga.ToString("F2" ));
 
-        if(counter == 20){
-            inclinacaoAntigassa = inclinacaoAntiga;
-            inclinacaoAntiga = inclinacaoAtual;
+        while(inclinacaoAtual > inclinacaoAntiga + 2){
+            bc.TurnLedOn(0, 100, 0);
+            aux.ContarGangorra();
 
-            inclinacaoAtual = (int)bc.Inclination();
-            if(inclinacaoAtual > -1 && inclinacaoAtual < 23) inclinacaoAtual += 360;
-
-            counter = 0;
-        }
-        else{
-            counter++;
-        }
-
-        if((inclinacaoAtual > (inclinacaoAntiga + 3)) && ((inclinacaoAntiga + 3) > (inclinacaoAntigassa + 3))){
             bc.PrintConsole(1, "Gangorra esperando");
-            bc.Move(-30, -30);
+            bc.Move(-12, -12);
             aux.Tick();
         }
+        bc.TurnLedOff();
     }
 
     static public void Desvio(){
@@ -414,6 +453,8 @@ class pista
             MoverEscavadora está em 1 para impedir que de bug tentando chegar em valores muito baixos.
         */
 
+        bc.Move(0, 0);
+
         mov.MoverProAngulo(matAng.AproximarAngulo(bc.Compass()));
 
         mov.MoverPorUnidadeRotacao(-12);
@@ -424,6 +465,11 @@ class pista
     }
 
     static public bool VerResgate(){
+        /* 
+            Detecta a área de resgate.
+            Utiliza um padrão de cor específico da fita cinza.
+        */ 
+
         int countUltra = 0;
         
         if((bc.ReturnBlue(0) > 50 &&
@@ -451,63 +497,6 @@ class pista
         
         return false;
     }
-}
-
-class matAng
-{
-    /*
-    ====== Funções de Matemática com Ângulos ======
-    - AproximarAngulo
-    - MatematicaCirculo
-    */ 
-    
-    static public int AproximarAngulo(float angulo, int aproximacao = 1)
-    {
-        if(aproximacao == 1){
-            // Retornar aproximação de ângulo para um dos pontos cardeais
-            if (angulo >= 315 || angulo < 45) return 0;
-            if (angulo >= 45 && angulo < 135) return 90;
-            if (angulo >= 135 && angulo < 225) return 180;
-            if (angulo >= 225 && angulo < 315) return 270;
-        }
-        else if(aproximacao == 2){
-            // Retornar aproximação de ângulo em intervalos de 45º
-            if (angulo >= 337.5 && angulo < 22.5) return 0;
-            if (angulo >= 22.5 && angulo < 67.5) return 45;
-            if (angulo >= 67.5 && angulo < 112.5) return 90;
-            if (angulo >= 112.5 && angulo < 157.5) return 135;
-            if (angulo >= 157.5 && angulo < 202.5) return 180;
-            if (angulo >= 202.5 && angulo < 247.5) return 225;
-            if (angulo >= 247.5 && angulo < 292.5) return 270;
-            if (angulo >= 292.5 && angulo < 337.5) return 315;
-        }
-
-        return 0;
-    }
-    
-    static public float MatematicaCirculo(float angulo)
-    {
-        /*
-            Faz matemática em ciclo, retornando o valor de deslocamento no ciclo trigonométrico.
-            Em resumo retorna a distância angular entre um ângulo específico e o ângulo 0
-        */
-        
-        if (angulo >= 360)
-        {
-            return angulo - 360;
-        }
-        else if (angulo < 0)
-        {
-
-            return (float)(-1 * 360 * Math.Floor((double)(angulo / 360)) + angulo);
-        }
-        else
-        {
-            return angulo;
-        }
-    }
-
-
 }
 
 class aux
@@ -670,7 +659,7 @@ class aux
         // bc.MoveFrontalRotations(100, 0.5f);
         
         float anguloGiro = 0, anguloInicial;
-        int sensibilidadeCirculo = 10; // se o giro for menor que esse valor ele é considerado um círculo
+        int sensibilidadeCirculo = 8; // se o giro for menor que esse valor ele é considerado um círculo
 
         bc.MoveFrontalRotations(100, 0.7f);
         if(aux.MedirLuz(1) < pista.escuroPreto2 && aux.MedirLuz(2) < pista.escuroPreto2){
@@ -736,9 +725,9 @@ class aux
         bc.PrintConsole(2, "Indo pro meio da linha");
 
         bc.Move(0, 0);
-        bc.Wait(100);
+        bc.Wait(50);
 
-        int controleTempo, sensor;
+        int sensor;
         float luzAntiga, luzAtual = 0;
 
         if(lado == "esquerda") sensor = 2;
@@ -755,6 +744,119 @@ class aux
             luzAtual = aux.MedirLuz(sensor);
             if(luzAtual < 4) break;
             if(luzAtual > luzAntiga) break;
+        }
+    }
+
+    static public void ContarGangorra(){
+        if(pista.counterGangorra == 20){
+            pista.inclinacaoAntigassa = pista.inclinacaoAntiga;
+            pista.inclinacaoAntiga = pista.inclinacaoAtual;
+
+            pista.inclinacaoAtual = (int)bc.Inclination();
+            if(pista.inclinacaoAtual > -10 && pista.inclinacaoAtual < 23) pista.inclinacaoAtual += 360;
+
+            pista.counterGangorra = 0;
+        }
+        else{
+            pista.counterGangorra++;
+        }
+    }
+
+    static public bool ProcurarMaisVerde(string lado){
+        bool res = false;
+        float anguloInicial, anguloGiro;
+
+        anguloInicial = bc.Compass();
+
+        if(lado == "esquerda"){
+            do{
+                anguloGiro = matAng.MatematicaCirculo(anguloInicial - bc.Compass());
+                
+                if(bc.ReturnColor(1 - 1) == "GREEN"){
+                    res = true;
+                    break;
+                }
+                if(MedirLuz(1) < pista.escuroLinha) break;
+
+                bc.Move(-900, 900);
+            }
+            while(anguloGiro < 10 || anguloGiro > 12);
+        
+            mov.MoverNoCirculo(anguloGiro);
+        }
+        else if(lado == "direita"){
+            do{
+                anguloGiro = matAng.MatematicaCirculo(bc.Compass() - anguloInicial);
+                
+                if(bc.ReturnColor(2 - 1) == "GREEN"){
+                    res = true;
+                    break;
+                }
+                if(MedirLuz(2) < pista.escuroLinha) break;
+
+                bc.Move(900, -900);
+            }
+            while(anguloGiro < 10 || anguloGiro > 12);
+        
+            mov.MoverNoCirculo(-anguloGiro);
+        }
+
+        return res;
+    }
+}
+
+
+class matAng
+{
+    /*
+    ====== Funções de Matemática com Ângulos ======
+    - AproximarAngulo
+    - MatematicaCirculo
+    */ 
+    
+    static public int AproximarAngulo(float angulo, int aproximacao = 1)
+    {
+        if(aproximacao == 1){
+            // Retornar aproximação de ângulo para um dos pontos cardeais
+            if (angulo >= 315 || angulo < 45) return 0;
+            if (angulo >= 45 && angulo < 135) return 90;
+            if (angulo >= 135 && angulo < 225) return 180;
+            if (angulo >= 225 && angulo < 315) return 270;
+        }
+        else if(aproximacao == 2){
+            // Retornar aproximação de ângulo em intervalos de 45º
+            if (angulo >= 337.5 && angulo < 22.5) return 0;
+            if (angulo >= 22.5 && angulo < 67.5) return 45;
+            if (angulo >= 67.5 && angulo < 112.5) return 90;
+            if (angulo >= 112.5 && angulo < 157.5) return 135;
+            if (angulo >= 157.5 && angulo < 202.5) return 180;
+            if (angulo >= 202.5 && angulo < 247.5) return 225;
+            if (angulo >= 247.5 && angulo < 292.5) return 270;
+            if (angulo >= 292.5 && angulo < 337.5) return 315;
+        }
+
+        return 0;
+    }
+    
+    static public float MatematicaCirculo(float angulo)
+    {
+        /*
+            Faz matemática em ciclo, retornando o valor de deslocamento no ciclo trigonométrico.
+            Em resumo retorna a distância angular entre um ângulo específico e o ângulo 0
+        */
+        
+        if (angulo >= 360)
+        {
+            return angulo - 360;
+        }
+        else if (angulo < 0)
+        {
+
+            return (float)(-1 * 360 * Math.Floor((double)(angulo / 360)) + angulo);
+        }
+        else
+        {
+            return angulo;
         }
     }
 }
