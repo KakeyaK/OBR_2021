@@ -1,10 +1,11 @@
 /*
     GPS
         Movimentação no triangulo       [concluido]
-        Função de Localização
-        Mapeamento da posição inicial   {pela metade}
-        Localizar arena preta           {pela metade}
-        Entregar objeto azul            
+        Mapeamento da posição inicial   [concluido]
+        Localizar arena preta           [concluido] [debugar]
+        Função de Localização      
+        Traçar Rota    
+              
     Radar                               ===
         Identificar bolinha sem erro    [concluído]
         alinhamento com a bolinha       [concluido]
@@ -22,12 +23,7 @@
 
 //by Mauro Moledo
 
-int velocidade = 170;
-int velocidadeReto = 200;
-int velocidadeGiro = 950;
-bool bolinhaPreta = false;
-string estagio = "Pista";
-string[] mapa;
+
 
 void Main()
 {
@@ -38,11 +34,22 @@ class resgate
     bool bolinhaPreta = false;
     string arenaPreta;
 
-    static public void Resgate()
+    static public void Resgate(float velocidadeReto = 200, float velocidadeGiro = 950)
     {
         bc.ActuatorSpeed(150);
         bc.CloseActuator();
         while (bc.AngleActuator() < 86) { bc.ActuatorUp(10); }
+        mov.MoverProAngulo(matAng.AproximarAngulo(bc.Compass()), velocidadeGiro);
+        bc.MoveFrontal(0, 0);
+        while (bc.distance(3 - 1) + bc.distance(2 - 1) < 150 || bc.distance(3 - 1) + bc.distance(2 - 1) > 15000)
+        {
+            bc.MoveFrontal(velocidadeReto, velocidadeReto);
+        }
+        bc.MoveFrontal(0, 0);
+
+        float[] mapa;
+        mapa = new float[7];
+        mapa = gps.Mapeamento();
         resgate.Radar(200);
 
     }
@@ -226,7 +233,7 @@ class resgate
         {
             while (bc.distance(1 - 1) > atual - val + 14 && bc.distance(1 - 1) > 30) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
         }
-        else 
+        else
         {
             while (bc.HasVictim() == false) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
             bc.Wait(200);
@@ -243,53 +250,198 @@ class gps
 
 {
 
-    public static float[] Mapeamento(float[] mapa)
+    public static float[] Mapeamento(float velocidadeGiro = 950, float velocidadeReto = 200)
     {
-    /* === Array de MAPA ===
+        /* === Array de MAPA ===
 
-        index 0 = Largura da resolução de arena
-        index 1 = Altura da resolução de arena
-        index 2 = Angulo inicial
-        index 3 = X0 Posição da area preta
-        index 4 = XF Posição da area preta
-        index 5 = X0 Posição da entrada
-        index 6 = XF Posição da entrada
+            index 0 = Largura da resolução de arena
+            index 1 = Altura da resolução de arena
+            index 2 = Angulo inicial
+            index 3 = X0 Posição da entrada
+            index 4 = XF Posição da entrada
+            index 5 = Arena preta na linha inicial 1 sim / 0 não
+            index 6 = posição da Arena preta 
 
-        === === === === === ===
-    */
+            === === === === === ===
+        */
+
         float ultra1 = bc.Distance(1 - 1);
-        float ultra2 = bc.Distance(2 - 1);
-        float ultra3 = bc.Distance(3 - 1);
+        float ultra2 = bc.Distance(2 - 1); //Direita
+        float ultra3 = bc.Distance(3 - 1); //Esquerda
         float compas = bc.Compass();
+        float[] mapa;
+        mapa = new float[7];
 
-        //Mapeamento da resolução da arena === Largura(0) Altura(1)
-        if (250 < ultra1 && ultra1 < 300) { mapa[0] = 400; mapa[1] = 300; }
-        if (350 < ultra1 && ultra1 < 400) { mapa[0] = 300; mapa[1] = 400; }
-
-        if (ultra1 > 9000)
+        //Mapeamento da resolução da arena === Largura(0) Altura(1) == Mapeamento da arena preta
+        if (250 < ultra1 && ultra1 < 300)
         {
-            if (ultra2 + ultra3 >= 269) { mapa[0] = 400; mapa[1] = 300; }
-            if (ultra2 + ultra3 < 269) { mapa[0] = 300; mapa[1] = 400; }
+            mapa[0] = 400; mapa[1] = 300; bc.PrintConsole(0, "Mapa 0 " + mapa[0].ToString());
+            bc.PrintConsole(1, "Mapa 1 " + mapa[1].ToString());
         }
+        if (350 < ultra1 && ultra1 < 400)
+        {
+            mapa[0] = 300; mapa[1] = 400;
+            bc.PrintConsole(0, "Mapa 0 " + mapa[0].ToString()); bc.PrintConsole(1, "Mapa 1 " + mapa[1].ToString());
+        }
+
+
+        //soma para 400 puro =  366
+        //soma para 400 arena = 278
+        //soma para 300 puro =  266
+        //soma para 300 arena = 184
+
+        if (ultra2 + ultra3 >= 350 && ultra2 + ultra3 < 900) { mapa[0] = 400; mapa[1] = 300; mapa[5] = 0; bc.PrintConsole(5, "Mapa 5 " + mapa[5].ToString()); } //soma para 400 puro =  366
+
+        if (ultra2 + ultra3 >= 270 && ultra2 + ultra3 < 290) { mapa[0] = 400; mapa[1] = 300; mapa[5] = 1; bc.PrintConsole(5, "Mapa 5 " + mapa[5].ToString()); } //soma para 400 arena = 278
+
+        if (ultra2 + ultra3 > 250 && ultra2 + ultra3 < 270) { mapa[0] = 300; mapa[1] = 400; mapa[5] = 0; bc.PrintConsole(5, "Mapa 5 " + mapa[5].ToString()); }  //soma para 300 puro =  266
+
+        if (ultra2 + ultra3 > 100 && ultra2 + ultra3 < 200) { mapa[0] = 300; mapa[1] = 400; mapa[5] = 1; bc.PrintConsole(5, "Mapa 5 " + mapa[5].ToString()); }  //soma para 300 arena = 184
+
 
         //Mapeamento do giroscópio inicial
         mapa[2] = matAng.AproximarAngulo(compas);
+        bc.PrintConsole(2, "Mapa 2 " + mapa[2].ToString());
 
-        //Mapeamento da area preta
 
-
-        //Mapeamento da localização da entrada === y = 0
-        if (ultra3 < ultra2)
+        //Mapeamento da localização da entrada === y = 0 || parte 1 
+        //isso se não tiver abismo na linha inicial
+        if (mapa[5] == 0)
         {
             mapa[3] = ultra3 - 33;
-        }
-        if (ultra2 < ultra3)
-        {
-            mapa[3] = ultra3 - 33;
+            mapa[4] = mapa[3] + 100;
+
+            bc.PrintConsole(3, "Mapa 3 " + mapa[3].ToString());
+            bc.PrintConsole(4, "Mapa 4 " + mapa[4].ToString());
         }
 
+        //Mapeamento da area preta e Mapeamento da localização da entrada || parte 2
+        if (ultra2 < 900)
+        {
+            //Se não tiver abismo vira pra direita
+            mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(compas + 90)), velocidadeGiro);
+
+            //certeza de arena na linha
+            if (mapa[5] == 1)
+            {
+                if (ultra2 < bc.distance(1 - 1) - 10)
+                {
+                    mapa[6] = 3;
+                    mapa[3] = ultra3 - 33;
+                    mapa[4] = mapa[3] + 100;
+                    bc.PrintConsole(3, "Mapa 3 " + mapa[3].ToString());
+                    bc.PrintConsole(4, "Mapa 4 " + mapa[4].ToString());
+                    bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
+                    while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                    //EntregarAzul();
+                }
+                else
+                {
+                    mapa[6] = 0;
+                    mapa[3] = ultra3 - 33 + 85;
+                    mapa[4] = mapa[3] + 100;
+                    bc.PrintConsole(3, "Mapa 3 " + mapa[3].ToString());
+                    bc.PrintConsole(4, "Mapa 4 " + mapa[4].ToString());
+                    bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
+                    mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() - 180)), velocidadeGiro);
+                    while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                    //EntregarAzul();
+                }
+
+            }
+            //certeza de falta de arena na linha
+            if (mapa[5] == 0)
+            {
+                while (bc.distance(1 - 1) > 15) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() - 90)), velocidadeGiro);
+                Abismo();
+
+                if (bc.ReturnColor(3 - 1) == "BLACK")
+                {
+                    mapa[6] = 2;
+                    bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
+                    //EntregarAzul();
+                }
+                else
+                {
+                    mapa[6] = 1;
+                    bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
+                    while (bc.distance(1 - 1) > 15) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                    mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() - 90)), velocidadeGiro);
+
+                    Abismo();
+                    //EntregarAzul();
+                }
+            }
+
+        }
+        //Se tiver abismo na direita
+        else
+        {
+            //Salvar saida
+            mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(compas - 90)), velocidadeGiro);
+            //Se tiver arena no 0
+            if (ultra3 < bc.distance(1 - 1) - 10)
+            {
+                mapa[6] = 0;
+                mapa[3] = ultra3 - 33 + 85;
+                mapa[4] = mapa[3] + 100;
+                bc.PrintConsole(3, "Mapa 3 " + mapa[3].ToString());
+                bc.PrintConsole(4, "Mapa 4 " + mapa[4].ToString());
+                bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
+
+                while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                //EntregarAzul();
+            }
+            //Se não tiver, pecorre o mapa
+            else
+            {
+                while (bc.distance(1 - 1) > 15) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+
+                mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() + 90)), velocidadeGiro);
+
+                while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+
+                //Se tiver arena no 1
+                if (bc.ReturnColor(3 - 1) == "BLACK")
+                {
+                    mapa[6] = 1;
+                    bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
+                    //EntregarAzul();
+                }
+                //Se não, tem arena no 2
+                else
+                {
+                    mapa[6] = 2;
+                    bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
+                    while (bc.distance(1 - 1) > 15) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                    mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() + 90)), velocidadeGiro);
+
+                    while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                    //EntregarAzul();
+                }
+            }
+        }
 
         return mapa;
+    }
+    public static void Abismo(float velocidadeGiro = 950, float velocidadeReto = 200)
+    {
+        if (bc.distance(1 - 1) > 9000)
+        {
+            while (bc.distance(3 - 1) < 900 && bc.distance(2 - 1) < 900)
+            {
+                bc.MoveFrontal(velocidadeReto, velocidadeReto);
+            }
+            bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+            bc.Wait(250);
+            bc.MoveFrontal(0, 0);
+        }
+        else
+        {
+            while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+        }
+
     }
     /*
     public static float[] Localização()
@@ -357,7 +509,7 @@ class gps
 }
 
 class pista
-{    
+{
 
     public static int escuroLinha, escuroPreto2;
     private float sensibilidade90;
@@ -366,16 +518,17 @@ class pista
     private float error = 0, lastError = 0, integral = 0, derivate = 0;
     private float movimento;
     private bool pararIntegro;
-    
+
     // Variáveis Gangorra
     public static int counter = 0;
     public static int inclinacaoAtual = 360, inclinacaoAntiga = 360;
 
     // Método construtor
-    public pista(float psensibilidade90 = 45){
+    public pista(float psensibilidade90 = 45)
+    {
         sensibilidade90 = psensibilidade90;
     }
-    
+
     public void SeguirLinhaPID(float velocidade, float kp, float ki, float kd)
     {
         // matemática PID
@@ -383,7 +536,7 @@ class pista
         integral += error;
         derivate = error - lastError;
 
-        if(integral * kp > 1000 - velocidade) integral = 1000 - velocidade;
+        if (integral * kp > 1000 - velocidade) integral = 1000 - velocidade;
 
         if (pararIntegro)
         {
@@ -396,7 +549,7 @@ class pista
 
         // Controle de erros do integro
         pararIntegro = ((Math.Abs(error) < 10 && Math.Abs(integral) > 250) ||
-                       ((error > 0 && movimento > 0) || (error < 0 && movimento < 0)) && 
+                       ((error > 0 && movimento > 0) || (error < 0 && movimento < 0)) &&
                        (Math.Abs(movimento) > 1000 - velocidade));
 
 
@@ -410,14 +563,16 @@ class pista
         // Movimento
         bc.Move(velocidade - movimento, velocidade + movimento);
         aux.Tick();
-        
+
         string giro;
-        if(error > sensibilidade90 && Math.Abs(error - lastError) < 1){
+        if (error > sensibilidade90 && Math.Abs(error - lastError) < 1)
+        {
             giro = aux.tipoGiro90(2);
             bc.PrintConsole(3, "Tipo do giro: " + giro.ToString());
             pista.Girar90("esquerda", giro);
         }
-        else if(error < -sensibilidade90 && Math.Abs(error - lastError) < 1){
+        else if (error < -sensibilidade90 && Math.Abs(error - lastError) < 1)
+        {
             giro = aux.tipoGiro90(1);
             bc.PrintConsole(3, "Tipo do giro: " + giro.ToString());
             pista.Girar90("direita", giro);
@@ -427,7 +582,8 @@ class pista
         lastError = error;
     }
 
-    static public void Girar90(string lado, string giro){
+    static public void Girar90(string lado, string giro)
+    {
         /*
             Giro em situações onde a ângulação do robô com a linha preta está muito alta.
 
@@ -442,21 +598,25 @@ class pista
         bc.Move(0, 0);
         aux.Tick();
 
-        if(giro == "quadrado"){
+        if (giro == "quadrado")
+        {
             mov.MoverPorUnidadeRotacao(8);
 
             float anguloInicial = bc.Compass();
             float anguloGiro; // usado para verificar se é necessário retornar
             bool retornando = false; // Controle para verificar se o giro passou do limite adequado
 
-            if(lado == "esquerda"){
+            if (lado == "esquerda")
+            {
                 bc.PrintConsole(2, "Giro para esquerda");
-                
+
                 // mov.MoverNoCirculo(-5);
 
-                while(aux.MedirLuz(2) > escuroLinha){
+                while (aux.MedirLuz(2) > escuroLinha)
+                {
                     anguloGiro = matAng.MatematicaCirculo(anguloInicial - bc.Compass());
-                    if(anguloGiro > 160 && anguloGiro < 165){
+                    if (anguloGiro > 160 && anguloGiro < 165)
+                    {
                         bc.Move(0, 0);
                         aux.Tick();
                         bc.PrintConsole(2, "Retornando giro para esquerda " + anguloGiro.ToString());
@@ -467,19 +627,23 @@ class pista
                     bc.Move(-970, 970);
                 }
 
-                if(retornando == false){
+                if (retornando == false)
+                {
                     mov.MoverNoCirculo(-16);
                 }
             }
-            
-            else if(lado == "direita"){
+
+            else if (lado == "direita")
+            {
                 bc.PrintConsole(2, "Giro para direita");
 
                 // mov.MoverNoCirculo(5);
-                
-                while(aux.MedirLuz(1) > escuroLinha){
+
+                while (aux.MedirLuz(1) > escuroLinha)
+                {
                     anguloGiro = matAng.MatematicaCirculo(bc.Compass() - anguloInicial);
-                    if(anguloGiro > 160 && anguloGiro < 165){
+                    if (anguloGiro > 160 && anguloGiro < 165)
+                    {
                         bc.PrintConsole(2, "Retornando giro para direita " + anguloGiro.ToString());
                         mov.MoverNoCirculo(-75);
                         retornando = true;
@@ -488,43 +652,50 @@ class pista
                     bc.Move(970, -970);
                 }
 
-                if(retornando == false){
+                if (retornando == false)
+                {
                     mov.MoverNoCirculo(16);
                 }
             }
         }
-        else{
+        else
+        {
             float anguloInicial;
             float anguloGiro;
 
             anguloInicial = bc.Compass();
 
-            if(lado == "esquerda"){
+            if (lado == "esquerda")
+            {
                 bc.PrintConsole(2, "Giro para esquerda");
-                do{
+                do
+                {
                     bc.Move(-900, 900);
-                    if(bc.ReturnColor(0) == "Green") pista.GirarVerde("direita");
-                    if(aux.MedirLuz(0) < pista.escuroLinha) break;
+                    if (bc.ReturnColor(0) == "Green") pista.GirarVerde("direita");
+                    if (aux.MedirLuz(0) < pista.escuroLinha) break;
 
-                    anguloGiro = matAng.MatematicaCirculo(anguloInicial - bc.Compass()); 
+                    anguloGiro = matAng.MatematicaCirculo(anguloInicial - bc.Compass());
                 }
-                while(anguloGiro < 5 || anguloGiro > 7);
+                while (anguloGiro < 5 || anguloGiro > 7);
             }
-            else{
+            else
+            {
                 bc.PrintConsole(2, "Giro para direita");
-                do{
+                do
+                {
                     bc.Move(900, -900);
-                    if(bc.ReturnColor(1) == "Green") pista.GirarVerde("esquerda");
-                    if(aux.MedirLuz(1) < pista.escuroLinha) break;
+                    if (bc.ReturnColor(1) == "Green") pista.GirarVerde("esquerda");
+                    if (aux.MedirLuz(1) < pista.escuroLinha) break;
 
-                    anguloGiro = matAng.MatematicaCirculo(bc.Compass() - anguloInicial); 
+                    anguloGiro = matAng.MatematicaCirculo(bc.Compass() - anguloInicial);
                 }
-                while(anguloGiro < 5 || anguloGiro > 7);
+                while (anguloGiro < 5 || anguloGiro > 7);
             }
         }
     }
 
-    static public void GirarVerde(string lado){
+    static public void GirarVerde(string lado)
+    {
         /*
             Segue os comandos devidos quando o robô encontra um quadrado verde.
         */
@@ -533,50 +704,59 @@ class pista
 
         bc.Move(200, 200);
         bc.wait(500);
-        
-        if(lado == "esquerda"){
+
+        if (lado == "esquerda")
+        {
             bc.PrintConsole(2, "Verde para esquerda");
             mov.MoverNoCirculo(-30);
-            while(aux.MedirLuz(2) > escuroLinha){
+            while (aux.MedirLuz(2) > escuroLinha)
+            {
                 bc.Move(-970, 970);
             }
             mov.MoverNoCirculo(-14);
         }
-        
-        else if(lado == "direita"){
+
+        else if (lado == "direita")
+        {
             bc.PrintConsole(2, "Verde para direita");
             mov.MoverNoCirculo(30);
-            while(aux.MedirLuz(1) > escuroLinha){
+            while (aux.MedirLuz(1) > escuroLinha)
+            {
                 bc.Move(970, -970);
             }
             mov.MoverNoCirculo(14);
         }
     }
 
-    static public void Gangorra(){
+    static public void Gangorra()
+    {
         // bc.PrintConsole(2, counter.ToString() + " " + inclinacaoAtual.ToString("F2") + " " + inclinacaoAntiga.ToString("F2" ));
 
-        if(counter == 20){
+        if (counter == 20)
+        {
             inclinacaoAntiga = inclinacaoAtual;
 
             inclinacaoAtual = (int)bc.Inclination();
-            if(inclinacaoAtual > -1 && inclinacaoAtual < 23) inclinacaoAtual += 360;
+            if (inclinacaoAtual > -1 && inclinacaoAtual < 23) inclinacaoAtual += 360;
 
             counter = 0;
         }
-        else{
+        else
+        {
             counter++;
         }
 
-        if(inclinacaoAtual > inclinacaoAntiga + 5){
+        if (inclinacaoAtual > inclinacaoAntiga + 5)
+        {
             bc.PrintConsole(1, "Gangorra esperando");
-            
+
             bc.Move(0, 0);
             aux.Tick();
         }
     }
 
-    static public void desvio(){
+    static public void desvio()
+    {
 
     }
 }
@@ -587,18 +767,20 @@ class matAng
     ====== Funções de Matemática com Ângulos ======
     - AproximarAngulo
     - MatematicaCirculo
-    */ 
-    
+    */
+
     static public int AproximarAngulo(float angulo, int aproximacao = 1)
     {
-        if(aproximacao == 1){
+        if (aproximacao == 1)
+        {
             // Retornar aproximação de ângulo para um dos pontos cardeais
             if (angulo >= 315 || angulo < 45) return 0;
             if (angulo >= 45 && angulo < 135) return 90;
             if (angulo >= 135 && angulo < 225) return 180;
             if (angulo >= 225 && angulo < 315) return 270;
         }
-        else if(aproximacao == 2){
+        else if (aproximacao == 2)
+        {
             // Retornar aproximação de ângulo em intervalos de 45º
             if (angulo >= 337.5 && angulo < 22.5) return 0;
             if (angulo >= 22.5 && angulo < 67.5) return 45;
@@ -612,14 +794,14 @@ class matAng
 
         return 0;
     }
-    
+
     static public float MatematicaCirculo(float angulo)
     {
         /*
             Faz matemática em ciclo, retornando o valor de deslocamento no ciclo trigonométrico.
             Em resumo retorna a distância angular entre um ângulo específico e o ângulo 0
         */
-        
+
         if (angulo >= 360)
         {
             return angulo - 360;
@@ -639,12 +821,12 @@ class matAng
 }
 
 class aux
-{   
+{
     /*
     ====== Funções Auxiliares ======
     - Tick
     - MedirLuz
-    */ 
+    */
     static public bool contador = false;
 
     static public void Tick()
@@ -660,15 +842,18 @@ class aux
         /* 
             Filtro da função de medir luz do robô
         */
-        if(bc.Lightness(sensor - 1) > 65){
+        if (bc.Lightness(sensor - 1) > 65)
+        {
             return 65;
         }
-        else{
+        else
+        {
             return bc.Lightness(sensor - 1);
         }
     }
 
-    static public void Preto2(){
+    static public void Preto2()
+    {
         /*
             Realiza uma rotina de procurar o quadrado verde caso encontre preto nos dois sensores.
 
@@ -680,26 +865,31 @@ class aux
         bc.Move(0, 0);
         aux.Tick();
 
-        if(aux.VerificarVerde(10) == false){
+        if (aux.VerificarVerde(10) == false)
+        {
             bc.Move(0, 0);
             aux.Tick();
             mov.MoverPorUnidadeRotacao(-3.5f);
-        
-            if(aux.VerificarVerde(10) == false){
+
+            if (aux.VerificarVerde(10) == false)
+            {
                 bc.Move(0, 0);
                 aux.Tick();
-                if(contador == true){
+                if (contador == true)
+                {
                     contador = false;
                     mov.MoverPorUnidadeRotacao(10);
                 }
-                else{
+                else
+                {
                     contador = true;
                 }
             }
         }
     }
 
-    static public bool VerificarVerde(int area){
+    static public bool VerificarVerde(int area)
+    {
         /*
             Rotina para verificar a linha verde. Salva a posição orignal para o robô poder voltar para onde começou e gira em sentido horário, anti horário em dobro e horário para voltar para o início.
 
@@ -715,32 +905,36 @@ class aux
 
         lado = VerificarVerdeMov(area, "horario");
 
-        if(lado == "direita" || lado == "esquerda"){
+        if (lado == "direita" || lado == "esquerda")
+        {
             mov.MoverProAngulo(anguloInicial);
             pista.GirarVerde(lado);
             return true;
         }
 
-        lado = VerificarVerdeMov(area*2, "antihorario");
-        
-        if(lado == "direita" || lado == "esquerda"){
+        lado = VerificarVerdeMov(area * 2, "antihorario");
+
+        if (lado == "direita" || lado == "esquerda")
+        {
             mov.MoverProAngulo(anguloInicial);
             pista.GirarVerde(lado);
             return true;
         }
 
         lado = VerificarVerdeMov(area, "horario");
-        
-        if(lado == "direita" || lado == "esquerda"){
+
+        if (lado == "direita" || lado == "esquerda")
+        {
             mov.MoverProAngulo(anguloInicial);
             pista.GirarVerde(lado);
             return true;
         }
-        
+
         return false;
     }
 
-    static public string VerificarVerdeMov(int area, string sentido){
+    static public string VerificarVerdeMov(int area, string sentido)
+    {
         /*
             Rotina de movimentação da verificação de verde. Gira para os dois lados procurando o quadrdo verde.
 
@@ -750,40 +944,49 @@ class aux
         aux.Tick();
         float anguloInicial = bc.Compass();
         float anguloGiro;
-        
-        if(sentido == "horario"){
+
+        if (sentido == "horario")
+        {
             // Sentido horário areaº
-            anguloGiro = matAng.MatematicaCirculo(bc.Compass() - anguloInicial); 
-            while((anguloGiro < area || anguloGiro > area + 2) && (MedirLuz(2) > pista.escuroLinha)){
-                if(bc.ReturnColor(0) == "GREEN"){
+            anguloGiro = matAng.MatematicaCirculo(bc.Compass() - anguloInicial);
+            while ((anguloGiro < area || anguloGiro > area + 2) && (MedirLuz(2) > pista.escuroLinha))
+            {
+                if (bc.ReturnColor(0) == "GREEN")
+                {
                     return "direita";
                 }
-                else if(bc.ReturnColor(1) == "GREEN"){
+                else if (bc.ReturnColor(1) == "GREEN")
+                {
                     return "esquerda";
                 }
                 bc.Move(850, -850);
-                anguloGiro = matAng.MatematicaCirculo(bc.Compass() - anguloInicial); 
+                anguloGiro = matAng.MatematicaCirculo(bc.Compass() - anguloInicial);
             }
         }
-        if(sentido == "antihorario"){
+        if (sentido == "antihorario")
+        {
             // Sentido anti horário areaº
-            anguloGiro = matAng.MatematicaCirculo(anguloInicial - bc.Compass()); 
-            while((anguloGiro < area || anguloGiro > area + 2) && (MedirLuz(1) > pista.escuroLinha)){
-                if(bc.ReturnColor(0) == "GREEN"){
+            anguloGiro = matAng.MatematicaCirculo(anguloInicial - bc.Compass());
+            while ((anguloGiro < area || anguloGiro > area + 2) && (MedirLuz(1) > pista.escuroLinha))
+            {
+                if (bc.ReturnColor(0) == "GREEN")
+                {
                     return "direita";
                 }
-                else if(bc.ReturnColor(1) == "GREEN"){
+                else if (bc.ReturnColor(1) == "GREEN")
+                {
                     return "esquerda";
                 }
                 bc.Move(-850, 850);
-                anguloGiro = matAng.MatematicaCirculo(anguloInicial - bc.Compass()); 
+                anguloGiro = matAng.MatematicaCirculo(anguloInicial - bc.Compass());
             }
         }
 
         return "";
     }
 
-    static public string tipoGiro90(int sensor){
+    static public string tipoGiro90(int sensor)
+    {
         /* 
         Função auxiliar para identificar se o giro é a partir de uma peça quadrada ou circular. Utiliza o fato de que uma deteção de uma peça circular tem mais linha preta na frente caso o robÔ continue andando.
 
@@ -793,23 +996,29 @@ class aux
         bc.Move(0, 0);
         aux.Tick();
         bc.MoveFrontalRotations(100, 0.5f);
-        if(sensor == 1){
+        if (sensor == 1)
+        {
             mov.MoverNoCirculo(10);
-            if(aux.MedirLuz(sensor) < 15){
+            if (aux.MedirLuz(sensor) < 15)
+            {
                 mov.MoverNoCirculo(-10);
                 return "quadrado";
             }
-            else{
+            else
+            {
                 return "circulo";
             }
         }
-        else if(sensor == 2){
+        else if (sensor == 2)
+        {
             mov.MoverNoCirculo(-10);
-            if(aux.MedirLuz(sensor) < 15){
+            if (aux.MedirLuz(sensor) < 15)
+            {
                 mov.MoverNoCirculo(10);
                 return "quadrado";
             }
-            else{
+            else
+            {
                 return "circulo";
             }
         }
@@ -827,7 +1036,7 @@ class mov
     - MoverEscavadora
     - MoverNoCirculo
     - MoverProAngulo
-    */ 
+    */
 
     static public void MoverUltra(float distance, int velocidade)
     {
@@ -837,13 +1046,17 @@ class mov
         bc.Move(0, 0);
         aux.Tick();
 
-        if(bc.Distance(1 - 1) > distance){
-            while(bc.Distance(1 - 1) > distance){
+        if (bc.Distance(1 - 1) > distance)
+        {
+            while (bc.Distance(1 - 1) > distance)
+            {
                 bc.MoveFrontal(velocidade, velocidade);
             }
         }
-        else{
-            while(bc.Distance(1 - 1) < distance){
+        else
+        {
+            while (bc.Distance(1 - 1) < distance)
+            {
                 bc.MoveFrontal(-velocidade, -velocidade);
             }
         }
@@ -860,24 +1073,25 @@ class mov
 
         if (distancia > 0)
         {
-            bc.MoveFrontalRotations(200, (float) (distancia / 2.066));
+            bc.MoveFrontalRotations(200, (float)(distancia / 2.066));
         }
         else
         {
-            bc.MoveFrontalRotations(-200, (float) (Math.Abs(distancia) / 2.066));
-            
+            bc.MoveFrontalRotations(-200, (float)(Math.Abs(distancia) / 2.066));
+
         }
         bc.Move(0, 0);
 
     }
 
     static public void MoverBalde(float alvoBalde)
-    {   
+    {
         /*
         Move o balde do robô até o ângulo desejado
         */
         // Verifica se o ângulo desejado está no intervalo do que o robô consegue alcançar.
-        if(alvoBalde > 0 && alvoBalde < 12){
+        if (alvoBalde > 0 && alvoBalde < 12)
+        {
             if (bc.AngleScoop() > alvoBalde)
             {
                 while (bc.AngleScoop() > alvoBalde)
@@ -898,13 +1112,14 @@ class mov
     }
 
     static public void MoverEscavadora(float alvoEscavadora)
-    {   
+    {
         /*
         Move o braço da escavadora até o ângulo desejado
         */
 
         // Verifica se o ângulo desejado está no intervalo do que o robô consegue alcançar.
-        if(alvoEscavadora >= 0 && alvoEscavadora < 90){
+        if (alvoEscavadora >= 0 && alvoEscavadora < 90)
+        {
             if (bc.AngleActuator() > alvoEscavadora)
             {
                 while (bc.AngleActuator() > alvoEscavadora)
@@ -937,34 +1152,38 @@ class mov
         bc.Wait(10);
 
         // Verificar se passou por cima de uma linha
-        bool linha = false;    
+        bool linha = false;
 
         float anguloInicial = bc.Compass();
         float anguloGiro;
 
-        if(anguloMovimento > 0){
-            do{
+        if (anguloMovimento > 0)
+        {
+            do
+            {
                 bc.Move(velocidade, -velocidade);
 
-                anguloGiro = matAng.MatematicaCirculo(bc.Compass() - anguloInicial); 
+                anguloGiro = matAng.MatematicaCirculo(bc.Compass() - anguloInicial);
             }
-            while(anguloGiro < anguloMovimento || anguloGiro > anguloMovimento + 2);  
+            while (anguloGiro < anguloMovimento || anguloGiro > anguloMovimento + 2);
         }
-        else if(anguloMovimento < 0){
+        else if (anguloMovimento < 0)
+        {
             anguloMovimento = Math.Abs(anguloMovimento);
-            do{
+            do
+            {
                 bc.Move(-velocidade, velocidade);
 
-                anguloGiro = matAng.MatematicaCirculo(anguloInicial - bc.Compass()); 
+                anguloGiro = matAng.MatematicaCirculo(anguloInicial - bc.Compass());
             }
-            while(anguloGiro < anguloMovimento || anguloGiro > anguloMovimento + 2);  
+            while (anguloGiro < anguloMovimento || anguloGiro > anguloMovimento + 2);
         }
 
         bc.MoveFrontal(0, 0);
     }
 
     static public void MoverProAngulo(float angulo, float velocidade = 950)
-    {   
+    {
         /*
         Se locomove até o ângulo desejado. 
         Apenas valores positivos
@@ -972,11 +1191,12 @@ class mov
         bc.Move(0, 0);
         aux.Tick();
 
-        if(angulo == 360) angulo = 0;
+        if (angulo == 360) angulo = 0;
 
-        if(angulo >= 0 && angulo < 360){
+        if (angulo >= 0 && angulo < 360)
+        {
             float anguloDiferenca = matAng.MatematicaCirculo(angulo - bc.Compass());
-            
+
             if (anguloDiferenca < 180)
             {
                 //girar no sentido horário
