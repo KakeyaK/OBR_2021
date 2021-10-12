@@ -11,8 +11,8 @@ string estagio = "Pista";
 
 void Main() 
 {   
-    pista pista = new pista(30); // Sensibilidade do giro de 90º. > "escuroPreto2" !!!
-    pista.escuroLinha = 25; pista.escuroPreto2 = 25; 
+    pista pista = new pista(35); // Sensibilidade do giro de 90º. > "escuroPreto2" !!!
+    pista.escuroLinha = 30; pista.escuroPreto2 = 25; 
 
     bc.SetPrecision(4); 
     bc.ColorSensibility(25); // 0 - 100, default = 33
