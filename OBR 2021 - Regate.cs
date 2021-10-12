@@ -2,9 +2,10 @@
     GPS
         Movimentação no triangulo       [concluido]
         Mapeamento da posição inicial   [concluido]
-        Localizar arena preta           [concluido] [debugar]
-        Função de Localização      
+        Localizar arena preta           [concluido] 
+        Função de Localização           
         Traçar Rota    
+        Entregar bloco azul             [concluido]
               
     Radar                               ===
         Identificar bolinha sem erro    [concluído]
@@ -34,23 +35,28 @@ class resgate
     bool bolinhaPreta = false;
     string arenaPreta;
 
-    static public void Resgate(float velocidadeReto = 200, float velocidadeGiro = 950)
+    static public void Resgate(float velocidadeReto = 290, float velocidadeGiro = 990)
     {
         bc.ActuatorSpeed(150);
         bc.CloseActuator();
         while (bc.AngleActuator() < 86) { bc.ActuatorUp(10); }
         mov.MoverProAngulo(matAng.AproximarAngulo(bc.Compass()), velocidadeGiro);
         bc.MoveFrontal(0, 0);
-        while (bc.distance(3 - 1) + bc.distance(2 - 1) < 150 || bc.distance(3 - 1) + bc.distance(2 - 1) > 15000)
+
+        while (bc.distance(3 - 1) + bc.distance(2 - 1) > 15000)
         {
             bc.MoveFrontal(velocidadeReto, velocidadeReto);
+            aux.Tick();
         }
+        bc.Wait(230);
+
         bc.MoveFrontal(0, 0);
+        bc.PrintConsole(0, "Correçãao finalizada");
 
         float[] mapa;
         mapa = new float[7];
         mapa = gps.Mapeamento();
-        resgate.Radar(200);
+        resgate.Radar();
 
     }
     static public void Radar(float velocidadeReto = 200)
@@ -250,7 +256,7 @@ class gps
 
 {
 
-    public static float[] Mapeamento(float velocidadeGiro = 950, float velocidadeReto = 200)
+    public static float[] Mapeamento(float velocidadeGiro = 990, float velocidadeReto = 290)
     {
         /* === Array de MAPA ===
 
@@ -319,6 +325,9 @@ class gps
         if (ultra2 < 900)
         {
             //Se não tiver abismo vira pra direita
+            bc.MoveFrontal(200, 200);
+            bc.Wait(290);
+            bc.MoveFrontal(0, 0);
             mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(compas + 90)), velocidadeGiro);
 
             //certeza de arena na linha
@@ -333,7 +342,7 @@ class gps
                     bc.PrintConsole(4, "Mapa 4 " + mapa[4].ToString());
                     bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
                     while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
-                    //EntregarAzul();
+                    EntregarAzul();
                 }
                 else
                 {
@@ -345,7 +354,7 @@ class gps
                     bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() - 180)), velocidadeGiro);
                     while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
-                    //EntregarAzul();
+                    EntregarAzul();
                 }
 
             }
@@ -360,7 +369,7 @@ class gps
                 {
                     mapa[6] = 2;
                     bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
-                    //EntregarAzul();
+                    EntregarAzul();
                 }
                 else
                 {
@@ -370,7 +379,7 @@ class gps
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() - 90)), velocidadeGiro);
 
                     Abismo();
-                    //EntregarAzul();
+                    EntregarAzul();
                 }
             }
 
@@ -379,6 +388,9 @@ class gps
         else
         {
             //Salvar saida
+            bc.MoveFrontal(200, 200);
+            bc.Wait(290);
+            bc.MoveFrontal(0, 0);
             mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(compas - 90)), velocidadeGiro);
             //Se tiver arena no 0
             if (ultra3 < bc.distance(1 - 1) - 10)
@@ -391,7 +403,7 @@ class gps
                 bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
 
                 while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
-                //EntregarAzul();
+                EntregarAzul();
             }
             //Se não tiver, pecorre o mapa
             else
@@ -407,7 +419,7 @@ class gps
                 {
                     mapa[6] = 1;
                     bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
-                    //EntregarAzul();
+                    EntregarAzul();
                 }
                 //Se não, tem arena no 2
                 else
@@ -418,14 +430,14 @@ class gps
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() + 90)), velocidadeGiro);
 
                     while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
-                    //EntregarAzul();
+                    EntregarAzul();
                 }
             }
         }
 
         return mapa;
     }
-    public static void Abismo(float velocidadeGiro = 950, float velocidadeReto = 200)
+    public static void Abismo(float velocidadeGiro = 950, float velocidadeReto = 290)
     {
         if (bc.distance(1 - 1) > 9000)
         {
@@ -443,6 +455,14 @@ class gps
         }
 
     }
+    public static void EntregarAzul()
+    {
+        bc.MoveFrontal(0, 0);
+        bc.OpenActuator();
+        while (bc.AngleActuator() > 20) { bc.ActuatorDown(10); }
+        while (bc.AngleActuator() < 86) { bc.ActuatorUp(10); }
+        bc.CloseActuator();
+    }
     /*
     public static float[] Localização()
     {
@@ -451,7 +471,7 @@ class gps
     }
     */
 
-    public static void MoverNoTriangulo(float y, float x, float ultra1, float velocidadeGiro = 950, float velocidadeReto = 200)
+    public static void MoverNoTriangulo(float y, float x, float ultra1, float velocidadeGiro = 950, float velocidadeReto = 290)
     {
         bc.PrintConsole(1, "Andando " + x.ToString() + " no eixo x === esquerda(-) || direita(+)");
         bc.PrintConsole(0, "Andando " + y.ToString() + " no eixo y === trás    (-) || frente (+)");
