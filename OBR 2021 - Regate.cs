@@ -124,8 +124,8 @@ class resgate
                     bc.PrintConsole(0, "volta");
                     bc.MoveFrontalRotations(-50, 10);
                     bc.MoveFrontalRotations(0, 0);
-                    if (variacaoEsquerda < -7) { resgate.buscaBolinha("Esquerda", 1 * direcao); }
-                    if (variacaoEsquerda > 7) { resgate.buscaBolinha("Esquerda", -1 * direcao); }
+                    if (variacaoEsquerda < -7) { resgate.buscaBolinha("Esquerda", 1 * direcao, mapa); }
+                    if (variacaoEsquerda > 7) { resgate.buscaBolinha("Esquerda", -1 * direcao, mapa); }
                     direcao = -1;
                     parada = 0;
                 }
@@ -134,8 +134,8 @@ class resgate
 
             else if (variacaoEsquerda > 7 || variacaoEsquerda < -7)
             {
-                if (variacaoEsquerda < -7) { resgate.buscaBolinha("Esquerda", 1 * direcao); }
-                if (variacaoEsquerda > 7) { resgate.buscaBolinha("Esquerda", -1 * direcao); }
+                if (variacaoEsquerda < -7) { resgate.buscaBolinha("Esquerda", 1 * direcao, mapa); }
+                if (variacaoEsquerda > 7) { resgate.buscaBolinha("Esquerda", -1 * direcao, mapa); }
                 direcao = -1;
                 parada = 0;
 
