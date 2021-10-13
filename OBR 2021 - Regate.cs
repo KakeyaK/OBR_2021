@@ -110,7 +110,7 @@ class resgate
 
             }
             //Quando identificar variação, podendo ser bolinha ou kim preocupado
-            if ((variacaoEsquerda > 7 || variacaoEsquerda < -7) && KimPreocupado == true  && direcao > 0)
+            if ((variacaoEsquerda > 7 || variacaoEsquerda < -7) && KimPreocupado == true && direcao > 0)
             {
                 bc.PrintConsole(0, "vai");
                 bc.MoveFrontalRotations(50, 10);
@@ -124,8 +124,8 @@ class resgate
                     bc.PrintConsole(0, "volta");
                     bc.MoveFrontalRotations(-50, 10);
                     bc.MoveFrontalRotations(0, 0);
-                    if (variacaoEsquerda < -7) { resgate.buscaBolinha("Direita", 1 * direcao, mapa); }
-                    if (variacaoEsquerda > 7) { resgate.buscaBolinha("Direita", -1 * direcao, mapa); }
+                    if (variacaoEsquerda < -7) { resgate.buscaBolinha("Esquerda", 1 * direcao); }
+                    if (variacaoEsquerda > 7) { resgate.buscaBolinha("Esquerda", -1 * direcao); }
                     direcao = -1;
                     parada = 0;
                 }
@@ -134,8 +134,8 @@ class resgate
 
             else if (variacaoEsquerda > 7 || variacaoEsquerda < -7)
             {
-                if (variacaoEsquerda < -7) { resgate.buscaBolinha("Direita", 1 * direcao, mapa); }
-                if (variacaoEsquerda > 7) { resgate.buscaBolinha("Direita", -1 * direcao, mapa); }
+                if (variacaoEsquerda < -7) { resgate.buscaBolinha("Esquerda", 1 * direcao); }
+                if (variacaoEsquerda > 7) { resgate.buscaBolinha("Esquerda", -1 * direcao); }
                 direcao = -1;
                 parada = 0;
 
@@ -144,11 +144,11 @@ class resgate
             if (bc.distance(3 - 1) > mapa[9] + 50 && bc.distance(2 - 1) > mapa[8] + 50 && KimPreocupado == true && direcao > 0)
             {
                 bc.PrintConsole(0, "Abismo, uêpa");
-                if (parada == 1) {parada = parada + 1;}
+                if (parada == 1) { parada = parada + 1; }
                 direcao = -1;
                 bc.MoveFrontalRotations(-200, 10);
             }
-                        //Se tiver bolinha na frente
+            //Se tiver bolinha na frente
 
             if (bc.HasVictim() == true)
             {
