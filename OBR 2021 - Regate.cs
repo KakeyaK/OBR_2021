@@ -4,13 +4,14 @@
 
     Radar                        
         Bolinhas na frente durante radar            [concluido]
-        Fazer triangulação considerando abismos
-        Entregar brancas primeiro       [kim]       [concluido]
+        Fazer triangulação considerando abismos     
+        contagens de bolinhas                        [concluido]
+        função pega bola preta           
     
     Preocupações do kim
         Abismo na frente da linha do radar          [concluido]
-        Bunda do robo no abismo (posicionarRadar)
-        bolinha perto da arena preta                [concluido]
+        Bunda do robo no abismo (posicionarRadar)   [não faremos] [eu acho]
+        bolinha perto da arena preta                usar bc.RobotSpeed() > 3) se for fazer
         
 */
 
@@ -47,7 +48,7 @@ class resgate
         bc.PrintConsole(0, "Correção finalizada");
 
         float[] mapa;
-        mapa = new float[10];
+        mapa = new float[11];
 
         mapa = gps.Mapeamento();
 
@@ -146,7 +147,7 @@ class resgate
                 bc.PrintConsole(0, "Abismo, uêpa");
                 if (parada == 1) { parada = parada + 1; }
                 direcao = -1;
-                bc.MoveFrontalRotations(-200, 10);
+                bc.MoveFrontalRotations(-200, 15);
             }
             //Se tiver bolinha na frente
 
@@ -156,7 +157,7 @@ class resgate
                 bc.CloseActuator();
                 while (bc.AngleActuator() < 86) { bc.ActuatorUp(10); }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() - 90)), velocidadeGiro);
-                gps.TracarRota(mapa);
+                gps.TracarRotaArena(mapa);
                 direcao = -1;
                 parada = 0;
             }
@@ -179,7 +180,7 @@ class resgate
                 bc.MoveFrontal(velocidadeReto * direcao, velocidadeReto * direcao);
             }
 
-            if (parada == 3)
+            if (parada == 3 || mapa[10] == 3)
             {
                 break;
             }
@@ -242,6 +243,7 @@ class resgate
             {
                 bc.MoveFrontal(velocidadeReto, velocidadeReto);
             }
+            bc.MoveFrontalRotations(200, 10);
 
         }
         else
@@ -250,13 +252,14 @@ class resgate
             bc.MoveFrontalRotations(200, 15);
         }
 
+
         bc.MoveFrontal(0, 0);
         bc.CloseActuator();
 
         while (bc.AngleActuator() < 86) { bc.ActuatorUp(10); }
         bc.MoveFrontalRotations(-200, 10);
 
-        gps.TracarRota(mapa);
+        gps.TracarRotaArena(mapa);
 
     }
     public static void EntregarObjeto()
@@ -277,7 +280,7 @@ class resgate
             bc.Move(170, 170);
             bc.Wait(200);
         }
-        while (bc.RobotSpeed() > 3);
+        while (bc.RobotSpeed() > 4);
 
         bc.OpenActuator();
         mov.MoverBalde(12);
@@ -291,12 +294,14 @@ class resgate
 
         mov.MoverEscavadora(85);
         mov.MoverBalde(0);
+
+        if (bc.HasVictim() == true) { resgate.EntregarBolinha(); }
     }
 
     public static void GuardarBolinha(int lado)
     {
         int multiplo = 1;
-        if (lado == 1) multiplo = -1;
+        if (lado == 1) { multiplo = -1; };
 
         float distanciaIncial;
 
@@ -304,7 +309,7 @@ class resgate
         distanciaIncial = bc.Distance(0);
 
         if (distanciaIncial < 150) mov.MoverUltra(42, 100);
-        else mov.MoverPorUnidadeRotacao(65);
+        else { mov.MoverPorUnidadeRotacao(65); };
 
         bc.Move(0, 0);
         bc.Wait(500);
@@ -320,7 +325,7 @@ class resgate
         bc.MoveFrontalRotations(-200, 3);
 
         if (distanciaIncial < 150) mov.MoverUltra(distanciaIncial, 100);
-        else mov.MoverPorUnidadeRotacao(-65);
+        else { mov.MoverPorUnidadeRotacao(-65); };
 
         bc.ActuatorSpeed(150);
         mov.MoverEscavadora(85);
@@ -344,6 +349,7 @@ class gps
             index 7 = lado de verificação
             index 8 = Parede Esperada Direita
             index 9 = Parede Esperada Esquerda
+            inex 10 = bolinhas entregadas
 
             === === === === === ===
         */
@@ -353,7 +359,9 @@ class gps
         float ultra3 = bc.Distance(3 - 1); //Esquerda
         float compas = bc.Compass();
         float[] mapa;
-        mapa = new float[10];
+        mapa = new float[11];
+
+        mapa[10] = 0;
 
         //Mapeamento da resolução da arena === Largura(0) Altura(1) == Mapeamento da arena preta
         if (250 < ultra1 && ultra1 < 300)
@@ -637,16 +645,7 @@ class gps
                     }
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90)), velocidadeGiro);
                 }
-                //arena 1 caso especial
-                if (mapa[6] == 1 && compas == mapa[2])
-                {
-                    mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
-                    while (bc.distance(1 - 1) < 90)
-                    {
-                        bc.Move(-velocidadeReto, -velocidadeReto);
-                    }
-                    mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90)), velocidadeGiro);
-                }
+
                 //arena 2
                 if (mapa[6] == 2)
                 {
@@ -674,17 +673,6 @@ class gps
                         bc.Move(-velocidadeReto, -velocidadeReto);
                     }
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 180)), velocidadeGiro);
-                }
-                //caso especial arena 1
-                if (mapa[6] == 1 && compas == mapa[2])
-                {
-                    mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)), velocidadeGiro);
-                    while (bc.distance(1 - 1) < 90)
-                    {
-                        bc.Move(-velocidadeReto, -velocidadeReto);
-                    }
-                    mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 180)), velocidadeGiro);
-
                 }
                 //arena 2
                 if (mapa[6] == 2)
@@ -739,7 +727,7 @@ class gps
         {
             if (y >= 0)
             {
-                while (bc.distance(1 - 1) > ultra1 - h && bc.distance(1 - 1) > 30)
+                while (bc.distance(1 - 1) > ultra1 - h && bc.distance(1 - 1) > 30 && (bc.distance(1 - 1) > 67 || bc.ReturnColor(3 - 1) != "BLACK"))
                 {
                     bc.MoveFrontal(velocidadeReto, velocidadeReto);
                 }
@@ -763,7 +751,7 @@ class gps
 
     }
 
-    public static void TracarRota(float[] mapa, float velocidadeReto = 290, float velocidadeGiro = 950)
+    public static void TracarRotaArena(float[] mapa, float velocidadeReto = 290, float velocidadeGiro = 950)
     {
         float ultra1 = bc.distance(1 - 1);
         float ultra2 = bc.distance(2 - 1);
@@ -900,17 +888,19 @@ class gps
         }
         gps.MoverNoTriangulo(y, x, anguloFinal);
 
-        if (bc.Heat() > 38 && bc.HasVictim())
+        if (bc.Heat() > 38 && bc.HasVictim() == true)
         {
             resgate.EntregarBolinha();
+            mapa[10] = mapa[10] + 1;
         }
         else if (bc.HasVictim())
         {
-            resgate.GuardarBolinha((int)mapa[7]);
-            gps.TracarRota(mapa);
+            if (mapa[10] >= 2) { resgate.EntregarBolinha(); mapa[10] = mapa[10] + 1; }
+            else { resgate.GuardarBolinha((int)mapa[7]); }
         }
-
         gps.PosicionarRadar(mapa);
+
+
     }
 }
 class matAng
