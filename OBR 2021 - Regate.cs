@@ -1,15 +1,17 @@
 /*
     GPS
         Salvar localização saida
+
     Radar                        
-
-        variavel esquerda ou direita 
-        limites de detecção
-        consertar função entregar objeto [kim]
-        Bolinhas na frente       
-
-        Entregar brancas primeiro       [kim]
-  
+        Bolinhas na frente durante radar            [concluido]
+        Fazer triangulação considerando abismos
+        Entregar brancas primeiro       [kim]       [concluido]
+    
+    Preocupações do kim
+        Abismo na frente da linha do radar          [concluido]
+        Bunda do robo no abismo (posicionarRadar)
+        bolinha perto da arena preta                [concluido]
+        
 */
 
 //by Mauro Moledo
@@ -17,8 +19,6 @@
 
 void Main()
 {
-
-
     resgate.Resgate();
 }
 class resgate
@@ -29,7 +29,8 @@ class resgate
     {
         bc.ActuatorSpeed(150);
         bc.CloseActuator();
-        while (bc.AngleActuator() < 86) { bc.ActuatorUp(10); }
+        mov.MoverEscavadora(85);
+        // while (bc.AngleActuator() < 86) { bc.ActuatorUp(10); }
         mov.MoverProAngulo(matAng.AproximarAngulo(bc.Compass()), velocidadeGiro);
         bc.MoveFrontal(0, 0);
 
@@ -38,13 +39,15 @@ class resgate
             bc.MoveFrontal(velocidadeReto, velocidadeReto);
             aux.Tick();
         }
-        bc.Wait(230);
+        //bc.MoveFrontalRotations(200, 15);
+        mov.MoverPorUnidadeRotacao(30);
+        // bc.Wait(230);a
 
         bc.MoveFrontal(0, 0);
         bc.PrintConsole(0, "Correção finalizada");
 
         float[] mapa;
-        mapa = new float[7];
+        mapa = new float[10];
 
         mapa = gps.Mapeamento();
 
@@ -57,105 +60,114 @@ class resgate
         bc.Wait(1000);
 
     }
-    static public void Radar(float[] mapa, float velocidadeReto = 200)
+    static public void Radar(float[] mapa, float velocidadeReto = 200, float velocidadeGiro = 950)
     {
         //Variavel para controle da direção 
         int direcao = -1;
-        float paredeDireita = 0;
-        float paredeEsquerda = 0;
         int parada = 0;
+        bool KimPreocupado = false;
+
+        //garra
+        while (bc.AngleActuator() > 1) { bc.ActuatorDown(10); }
+        bc.OpenActuator();
+
+        //KimPreocupado
+        if (bc.distance(1 - 1) > 300) { KimPreocupado = true; }
+
         while (true)
         {
             //Verifica a variação para indentificar bolinhas e ignorar o terreno
             bc.PrintConsole(0, " ");
+
             bc.Wait(5);
+
             float val1 = bc.distance(2 - 1); // Ultrassom da direita
+            if (val1 > mapa[8]) { val1 = mapa[8]; }
             float val2 = bc.distance(3 - 1); // Ultrassom da esquerda
+            if (val2 > mapa[9]) { val2 = mapa[9]; };
+
             bc.Wait(5);
-            float variacaoDireita = (val1 - bc.distance(2 - 1));
-            float variacaoEsquerda = (val2 - bc.distance(3 - 1));
 
-            bc.PrintConsole(1, "Variação direita: " + variacaoDireita.ToString());
-            bc.PrintConsole(2, "Variação esquerda: " + variacaoEsquerda.ToString());
+            float val3 = bc.distance(2 - 1); // Ultrassom da direita
+            if (val3 > mapa[8]) { val3 = mapa[8]; }
+            float val4 = bc.distance(3 - 1); // Ultrassom da esquerda
+            if (val4 > mapa[9]) { val4 = mapa[9]; }
 
-            //ParedeEsperada
-            if (bc.distance(3 - 1) > 9000 && paredeEsquerda == 0 && parada != 0)
-            {
-                while (bc.distance(3 - 1) > 9000)
-                {
-                    bc.MoveFrontal(-200 * direcao, -200 * direcao);
-                }
-                bc.MoveFrontal(0, 0);
-                paredeEsquerda = bc.distance(3 - 1);
-                while (bc.distance(3 - 1) < 9000)
-                {
-                    bc.MoveFrontal(200 * direcao, 200 * direcao);
-                }
-                bc.MoveFrontal(0, 0);
 
-            }
-            //ParedeEsperada
-            if (bc.distance(2 - 1) > 9000 && paredeDireita == 0 && parada != 0)
-            {
+            float variacaoDireita = (val1 - val3);
+            float variacaoEsquerda = (val2 - val4);
 
-                while (bc.distance(2 - 1) > 9000)
-                {
-                    bc.MoveFrontal(-200 * direcao, -200 * direcao);
-                }
 
-                bc.MoveFrontal(0, 0);
-                paredeDireita = bc.distance(2 - 1);
-                while (bc.distance(2 - 1) < 9000)
-                {
-                    bc.MoveFrontal(200 * direcao, 200 * direcao);
-                }
-                bc.MoveFrontal(0, 0);
-            }
-            //Bolinha e afins
+
             if (variacaoDireita > 7 || variacaoDireita < -7)
             {
-                if (bc.distance(2 - 1) < paredeDireita + 10 && bc.distance(2 - 1) > paredeDireita - 10 && paredeDireita != 0)
-                {
-                    bc.PrintConsole(4, "ignorar abismos");
-                }
-                else
-                {
-                    if (variacaoDireita < -7) { resgate.buscaBolinha("Direita", 1 * direcao, mapa); }
-                    if (variacaoDireita > 7) { resgate.buscaBolinha("Direita", -1 * direcao, mapa); }
-                    direcao = direcao * -1;
-                    parada = 0;
-                    paredeDireita = 0;
-                    paredeEsquerda = 0;
-                }
+                bc.MoveFrontal(0, 0);
+                if (variacaoDireita < -7) { resgate.buscaBolinha("Direita", 1 * direcao, mapa); }
+                if (variacaoDireita > 7) { resgate.buscaBolinha("Direita", -1 * direcao, mapa); }
+                direcao = -1;
+                parada = 0;
+
 
             }
-            //Bolinha e afins
-            if (variacaoEsquerda > 7 || variacaoEsquerda < -7)
+            //Quando identificar variação, podendo ser bolinha ou kim preocupado
+            if ((variacaoEsquerda > 7 || variacaoEsquerda < -7) && KimPreocupado == true  && direcao > 0)
             {
-                if (bc.distance(3 - 1) < paredeEsquerda + 10 && bc.distance(3 - 1) > paredeEsquerda - 10)
+                bc.PrintConsole(0, "vai");
+                bc.MoveFrontalRotations(50, 10);
+                bc.MoveFrontalRotations(0, 0);
+                if (bc.distance(3 - 1) > mapa[9] + 50)
                 {
-                    bc.PrintConsole(4, "ignorar abismos");
+                    bc.PrintConsole(0, "Bolinha nada");
                 }
                 else
                 {
-                    if (variacaoEsquerda < -7) { resgate.buscaBolinha("Esquerda", 1 * direcao, mapa); }
-                    if (variacaoEsquerda > 7) { resgate.buscaBolinha("Esquerda", -1 * direcao, mapa); }
-                    direcao = direcao * -1;
+                    bc.PrintConsole(0, "volta");
+                    bc.MoveFrontalRotations(-50, 10);
+                    bc.MoveFrontalRotations(0, 0);
+                    if (variacaoEsquerda < -7) { resgate.buscaBolinha("Direita", 1 * direcao, mapa); }
+                    if (variacaoEsquerda > 7) { resgate.buscaBolinha("Direita", -1 * direcao, mapa); }
+                    direcao = -1;
                     parada = 0;
-                    paredeDireita = 0;
-                    paredeEsquerda = 0;
                 }
 
             }
+
+            else if (variacaoEsquerda > 7 || variacaoEsquerda < -7)
+            {
+                if (variacaoEsquerda < -7) { resgate.buscaBolinha("Direita", 1 * direcao, mapa); }
+                if (variacaoEsquerda > 7) { resgate.buscaBolinha("Direita", -1 * direcao, mapa); }
+                direcao = -1;
+                parada = 0;
+
+            }
+
+            if (bc.distance(3 - 1) > mapa[9] + 50 && bc.distance(2 - 1) > mapa[8] + 50 && KimPreocupado == true && direcao > 0)
+            {
+                bc.PrintConsole(0, "Abismo, uêpa");
+                if (parada == 1) {parada = parada + 1;}
+                direcao = -1;
+                bc.MoveFrontalRotations(-200, 10);
+            }
+                        //Se tiver bolinha na frente
+
+            if (bc.HasVictim() == true)
+            {
+                bc.MoveFrontalRotations(200, 15);
+                bc.CloseActuator();
+                while (bc.AngleActuator() < 86) { bc.ActuatorUp(10); }
+                mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() - 90)), velocidadeGiro);
+                gps.TracarRota(mapa);
+                direcao = -1;
+                parada = 0;
+            }
+
             //Se chegar na parede inverte a variavel de direção.
-            if (bc.distance(1 - 1) < 20 || bc.Touch(1 - 1) == true)
+            if (bc.distance(1 - 1) < 30 || bc.Touch(1 - 1) == true)
             {
-
                 bc.PrintConsole(0, "Parede, uêpa");
                 parada = parada + 1;
                 direcao = direcao * -1;
-                if (bc.distance(2 - 1) > 9000) { paredeDireita = 275; }
-                if (bc.distance(3 - 1) > 9000) { paredeEsquerda = 275; }
+
 
                 while (bc.distance(1 - 1) < 30 || bc.Touch(1 - 1) == true)
                 {
@@ -166,6 +178,7 @@ class resgate
             {
                 bc.MoveFrontal(velocidadeReto * direcao, velocidadeReto * direcao);
             }
+
             if (parada == 3)
             {
                 break;
@@ -177,8 +190,8 @@ class resgate
     {
         bc.MoveFrontal(0, 0);
         bc.PrintConsole(0, "Situação: " + lado + " " + passou.ToString());
-        bc.PrintConsole(3, " 1 = passou");
-        bc.PrintConsole(4, "-1 = precipitou");
+        bc.CloseActuator();
+        while (bc.AngleActuator() < 86) { bc.ActuatorUp(10); }
 
         //Corrige precipitação ou atraso
         //Interessante utilizar a largura das bolinhas para medir a precisão {não implementado}
@@ -219,21 +232,32 @@ class resgate
         float atual = bc.distance(1 - 1);
 
         //Movimentação da garra
+
         while (bc.AngleActuator() > 1) { bc.ActuatorDown(10); }
         bc.OpenActuator();
-        if (bc.distance(1 - 1) < 9000)
+
+        if (bc.distance(1 - 1) < 400)
         {
-            while (bc.distance(1 - 1) > atual - val + 14 && bc.distance(1 - 1) > 30) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+            while (bc.distance(1 - 1) > atual - val + 18 && bc.distance(1 - 1) > 30)
+            {
+                bc.MoveFrontal(velocidadeReto, velocidadeReto);
+            }
+
         }
         else
         {
-            while (bc.HasVictim() == false) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
-            bc.Wait(200);
+            while (bc.HasVictim() == false) { bc.MoveFrontal(velocidadeReto, velocidadeReto); } // aqui o robo pega a bolinha pela boleana
+            bc.MoveFrontalRotations(200, 15);
         }
+
         bc.MoveFrontal(0, 0);
         bc.CloseActuator();
+
         while (bc.AngleActuator() < 86) { bc.ActuatorUp(10); }
+        bc.MoveFrontalRotations(-200, 10);
+
         gps.TracarRota(mapa);
+
     }
     public static void EntregarObjeto()
     {
@@ -248,18 +272,60 @@ class resgate
     {
         bc.ActuatorSpeed(150);
 
-        bc.Move(100, 100);
-        bc.Wait(1500);
-
-        mov.MoverEscavadora(0);
-        mov.MoverBalde(12);
+        do
+        {
+            bc.Move(170, 170);
+            bc.Wait(200);
+        }
+        while (bc.RobotSpeed() > 3);
 
         bc.OpenActuator();
-        bc.Wait(2000);
+        mov.MoverBalde(12);
+        mov.MoverEscavadora(0);
+        bc.Wait(300);
+        mov.MoverEscavadora(30);
+        mov.MoverEscavadora(0);
+        bc.Wait(1000);
+
         bc.CloseActuator();
 
         mov.MoverEscavadora(85);
         mov.MoverBalde(0);
+    }
+
+    public static void GuardarBolinha(int lado)
+    {
+        int multiplo = 1;
+        if (lado == 1) multiplo = -1;
+
+        float distanciaIncial;
+
+        mov.MoverNoCirculo(110 * multiplo);
+        distanciaIncial = bc.Distance(0);
+
+        if (distanciaIncial < 150) mov.MoverUltra(42, 100);
+        else mov.MoverPorUnidadeRotacao(65);
+
+        bc.Move(0, 0);
+        bc.Wait(500);
+
+        bc.ActuatorSpeed(20);
+        mov.MoverEscavadora(0);
+
+        bc.MoveFrontalRotations(50, 3);
+
+        bc.Move(0, 0);
+        bc.Wait(300);
+
+        bc.MoveFrontalRotations(-200, 3);
+
+        if (distanciaIncial < 150) mov.MoverUltra(distanciaIncial, 100);
+        else mov.MoverPorUnidadeRotacao(-65);
+
+        bc.ActuatorSpeed(150);
+        mov.MoverEscavadora(85);
+        mov.MoverNoCirculo(-110 * multiplo);
+
     }
 }
 class gps
@@ -275,6 +341,9 @@ class gps
             index 4 = XF Posição da entrada
             index 5 = Arena preta na linha inicial 1 sim / 0 não
             index 6 = posição da Arena preta 
+            index 7 = lado de verificação
+            index 8 = Parede Esperada Direita
+            index 9 = Parede Esperada Esquerda
 
             === === === === === ===
         */
@@ -284,7 +353,7 @@ class gps
         float ultra3 = bc.Distance(3 - 1); //Esquerda
         float compas = bc.Compass();
         float[] mapa;
-        mapa = new float[7];
+        mapa = new float[10];
 
         //Mapeamento da resolução da arena === Largura(0) Altura(1) == Mapeamento da arena preta
         if (250 < ultra1 && ultra1 < 300)
@@ -331,13 +400,15 @@ class gps
         }
 
         //Mapeamento da area preta e Mapeamento da localização da entrada || parte 2
-        if (ultra2 < 900)
+        if (ultra2 < 400)
         {
             //Se não tiver abismo vira pra direita
-            bc.MoveFrontal(200, 200);
-            bc.Wait(290);
+            mov.MoverPorUnidadeRotacao(14);
             bc.MoveFrontal(0, 0);
+            aux.Tick();
             mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(compas + 90)), velocidadeGiro);
+            bc.MoveFrontal(0, 0);
+            aux.Tick();
 
             //certeza de arena na linha
             if (mapa[5] == 1)
@@ -350,7 +421,7 @@ class gps
                     bc.PrintConsole(3, "Mapa 3 " + mapa[3].ToString());
                     bc.PrintConsole(4, "Mapa 4 " + mapa[4].ToString());
                     bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
-                    while (bc.distance(1 - 1) > 87) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                    Abismo();
 
                 }
                 else
@@ -362,7 +433,7 @@ class gps
                     bc.PrintConsole(4, "Mapa 4 " + mapa[4].ToString());
                     bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() - 180)), velocidadeGiro);
-                    while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                    Abismo();
 
                 }
 
@@ -370,7 +441,7 @@ class gps
             //certeza de falta de arena na linha
             else
             {
-                while (bc.distance(1 - 1) > 15) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                while (bc.distance(1 - 1) > 16) { bc.Move(velocidadeReto, velocidadeReto); }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() - 90)), velocidadeGiro);
                 Abismo();
 
@@ -389,7 +460,7 @@ class gps
                     bc.PrintConsole(4, "Mapa 4 " + mapa[4].ToString());
                     bc.PrintConsole(5, "Mapa 5 " + mapa[5].ToString());
                     bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
-                    while (bc.distance(1 - 1) > 15) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                    if (bc.distance(1 - 1) > 900) { while (bc.distance(1 - 1) > 16) { bc.Move(velocidadeReto, velocidadeReto); } }
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() - 90)), velocidadeGiro);
                     Abismo();
 
@@ -401,9 +472,9 @@ class gps
         else
         {
             //Salvar saida
-            bc.MoveFrontal(200, 200);
-            bc.Wait(290);
+            mov.MoverPorUnidadeRotacao(14);
             bc.MoveFrontal(0, 0);
+            aux.Tick();
             mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(compas - 90)), velocidadeGiro);
             //Se tiver arena no 0
             if (ultra3 < bc.distance(1 - 1) - 10)
@@ -417,7 +488,7 @@ class gps
                 bc.PrintConsole(5, "Mapa 5 " + mapa[5].ToString());
                 bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
 
-                while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                Abismo();
 
             }
             //Se não tiver, pecorre o mapa
@@ -425,7 +496,7 @@ class gps
             {
                 mapa[5] = 0;
                 bc.PrintConsole(5, "Mapa 5 " + mapa[5].ToString());
-                while (bc.distance(1 - 1) > 15) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                while (bc.distance(1 - 1) > 16) { bc.Move(velocidadeReto, velocidadeReto); }
 
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() + 90)), velocidadeGiro);
 
@@ -444,13 +515,39 @@ class gps
                     mapa[6] = 2;
                     bc.PrintConsole(6, "Mapa 6 " + mapa[6].ToString());
 
+                    if (bc.distance(1 - 1) > 900) { while (bc.distance(1 - 1) > 16) { bc.Move(velocidadeReto, velocidadeReto); } }
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(bc.Compass() + 90)), velocidadeGiro);
 
-                    while (bc.distance(1 - 1) > 82) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
+                    Abismo();
 
                 }
             }
         }
+        //Mapeamento do lado de verificação
+        if (mapa[6] == 0)
+        {
+            if (mapa[0] == 300) { mapa[7] = 0; }
+            if (mapa[0] == 400) { mapa[7] = 1; }
+        }
+        if (mapa[6] == 1)
+        {
+            if (mapa[0] == 300) { mapa[7] = 1; }
+            if (mapa[0] == 400) { mapa[7] = 0; }
+        }
+        if (mapa[6] == 2)
+        {
+            if (mapa[0] == 300) { mapa[7] = 0; }
+            if (mapa[0] == 400) { mapa[7] = 1; }
+        }
+        if (mapa[6] == 3)
+        {
+            if (mapa[0] == 300) { mapa[7] = 1; }
+            if (mapa[0] == 400) { mapa[7] = 0; }
+        }
+        //Parede Esperada
+        if (mapa[7] == 0) { mapa[9] = 269; mapa[8] = 99; }
+        if (mapa[7] == 1) { mapa[9] = 99; mapa[8] = 269; }
+
 
         return mapa;
     }
@@ -460,26 +557,23 @@ class gps
         {
             while (bc.distance(3 - 1) < 900 && bc.distance(2 - 1) < 900)
             {
-                bc.MoveFrontal(velocidadeReto, velocidadeReto);
+                bc.Move(velocidadeReto, velocidadeReto);
             }
-            bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
-            bc.Wait(250);
-            bc.MoveFrontal(0, 0);
+            mov.MoverPorUnidadeRotacao(12.5f);
+            // bc.Move(-velocidadeReto, -velocidadeReto);
+            // bc.Wait(250);
+            bc.Move(0, 0);
         }
         else
         {
-            while (bc.ReturnColor(3 - 1) != "BLACK" && bc.distance(1 - 1) > 15) { bc.MoveFrontal(velocidadeReto, velocidadeReto); }
-            bc.MoveFrontal(0, 0);
+            while (bc.ReturnColor(3 - 1) != "BLACK" && bc.distance(1 - 1) > 16) { bc.Move(velocidadeReto, velocidadeReto); }
+            bc.Move(0, 0);
         }
 
     }
     public static void PosicionarRadar(float[] mapa, float velocidadeReto = 290, float velocidadeGiro = 950)
     {
         float compas = matAng.AproximarAngulo(bc.compass());
-        //mapa[2] angulo incial
-        //mapa[0] largura da resolução
-        //mapa[5] arena preta na linha inicial  1/0
-        //mapa[6] arena preta                   0/1/2/3
 
         if (mapa[5] == 1)
         {
@@ -488,9 +582,10 @@ class gps
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 180)), velocidadeGiro);
                 while (bc.distance(1 - 1) < 90)
                 {
-                    bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+                    bc.Move(-velocidadeReto, -velocidadeReto);
                 }
-                bc.MoveFrontal(0, 0);
+
+                bc.Move(0, 0);
                 if (mapa[6] == 3)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)), velocidadeGiro);
@@ -501,7 +596,7 @@ class gps
                 }
                 while (bc.Touch(1 - 1) == false)
                 {
-                    bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+                    bc.Move(-velocidadeReto, -velocidadeReto);
                 }
                 //não fazer radar na frente de abismo
             }
@@ -518,12 +613,12 @@ class gps
                 }
                 while (bc.distance(1 - 1) < 90)
                 {
-                    bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+                    bc.Move(-velocidadeReto, -velocidadeReto);
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
                 while (bc.Touch(1 - 1) == false)
                 {
-                    bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+                    bc.Move(-velocidadeReto, -velocidadeReto);
                 }
 
             }
@@ -538,7 +633,7 @@ class gps
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
                     while (bc.distance(1 - 1) < 90)
                     {
-                        bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+                        bc.Move(-velocidadeReto, -velocidadeReto);
                     }
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90)), velocidadeGiro);
                 }
@@ -548,7 +643,7 @@ class gps
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
                     while (bc.distance(1 - 1) < 90)
                     {
-                        bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+                        bc.Move(-velocidadeReto, -velocidadeReto);
                     }
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90)), velocidadeGiro);
                 }
@@ -558,13 +653,13 @@ class gps
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
                     while (bc.distance(1 - 1) < 90)
                     {
-                        bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+                        bc.Move(-velocidadeReto, -velocidadeReto);
                     }
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)), velocidadeGiro);
                 }
                 while (bc.Touch(1 - 1) == false)
                 {
-                    bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+                    bc.Move(-velocidadeReto, -velocidadeReto);
                 }
             }
 
@@ -576,17 +671,17 @@ class gps
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)), velocidadeGiro);
                     while (bc.distance(1 - 1) < 90)
                     {
-                        bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+                        bc.Move(-velocidadeReto, -velocidadeReto);
                     }
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 180)), velocidadeGiro);
                 }
                 //caso especial arena 1
-                if (mapa[6] == 1)
+                if (mapa[6] == 1 && compas == mapa[2])
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)), velocidadeGiro);
                     while (bc.distance(1 - 1) < 90)
                     {
-                        bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+                        bc.Move(-velocidadeReto, -velocidadeReto);
                     }
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 180)), velocidadeGiro);
 
@@ -597,17 +692,17 @@ class gps
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90)), velocidadeGiro);
                     while (bc.distance(1 - 1) < 90)
                     {
-                        bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+                        bc.Move(-velocidadeReto, -velocidadeReto);
                     }
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 180)), velocidadeGiro);
                 }
                 while (bc.Touch(1 - 1) == false)
                 {
-                    bc.MoveFrontal(-velocidadeReto, -velocidadeReto);
+                    bc.Move(-velocidadeReto, -velocidadeReto);
                 }
             }
         }
-        bc.MoveFrontal(0, 0);
+        bc.Move(0, 0);
 
     }
 
@@ -662,7 +757,7 @@ class gps
         }
         else
         {
-            bc.PrintConsole(1, "Usar Função Metros por segundo");
+            mov.MoverPorUnidadeRotacao(-h);
         }
         mov.MoverProAngulo(anguloFinal);
 
@@ -683,6 +778,7 @@ class gps
             //400
             if (compas == matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)))
             {
+
                 y = ultra1 - 50;
                 x = (ultra3 - 50) * -1;
                 anguloFinal = matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90 - 45), 2);
@@ -774,7 +870,7 @@ class gps
         }
         if (mapa[6] == 3)
         {
-            //400
+
             if (compas == matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)))
             {
                 y = (355 - ultra1 - 50) * -1;
@@ -788,7 +884,6 @@ class gps
                 anguloFinal = matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90 + 45), 2);
             }
 
-            //300
             if (compas == matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])))
             {
                 y = (355 - ultra1 - 50) * -1;
@@ -804,7 +899,17 @@ class gps
             }
         }
         gps.MoverNoTriangulo(y, x, anguloFinal);
-        resgate.EntregarBolinha();
+
+        if (bc.Heat() > 38 && bc.HasVictim())
+        {
+            resgate.EntregarBolinha();
+        }
+        else if (bc.HasVictim())
+        {
+            resgate.GuardarBolinha((int)mapa[7]);
+            gps.TracarRota(mapa);
+        }
+
         gps.PosicionarRadar(mapa);
     }
 }
@@ -967,7 +1072,6 @@ class mov
             }
         }
     }
-
     static public void MoverEscavadora(float alvoEscavadora)
     {
         /*
@@ -977,7 +1081,7 @@ class mov
         // Verifica se o ângulo desejado está no intervalo do que o robô consegue alcançar.
         if (alvoEscavadora >= 0 && alvoEscavadora < 90)
         {
-            if (bc.AngleActuator() > alvoEscavadora)
+            if (bc.AngleActuator() > alvoEscavadora && bc.AngleScoop() < 120)
             {
                 while (bc.AngleActuator() > alvoEscavadora)
                 {
@@ -988,7 +1092,7 @@ class mov
             else
             {
                 //enquanto o seno da posicao atual da escavadora for maior q o seno da posicao alvo, a escavadora desce
-                while (bc.AngleActuator() < alvoEscavadora)
+                while (bc.AngleActuator() < alvoEscavadora && bc.AngleScoop() < 120)
                 {
                     bc.ActuatorUp(10);
                 }
