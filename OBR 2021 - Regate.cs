@@ -5,8 +5,8 @@
     Radar                        
         Bolinhas na frente durante radar            [concluido]
         Fazer triangulação considerando abismos     
-        contagens de bolinhas                        [concluido]
-        função pega bola preta           
+        contagens de bolinhas                       [concluido]
+        função pega bola preta                      
     
     Preocupações do kim
         Abismo na frente da linha do radar          [concluido]
@@ -243,7 +243,8 @@ class resgate
             {
                 bc.MoveFrontal(velocidadeReto, velocidadeReto);
             }
-            bc.MoveFrontalRotations(200, 10);
+            bc.MoveFrontal(200, 200);
+            bc.Wait(500);
 
         }
         else
@@ -895,8 +896,9 @@ class gps
         }
         else if (bc.HasVictim())
         {
-            if (mapa[10] >= 2) { resgate.EntregarBolinha(); mapa[10] = mapa[10] + 1; }
+            if (mapa[10] >= 2) { resgate.EntregarBolinha(); }
             else { resgate.GuardarBolinha((int)mapa[7]); }
+            mapa[10] = mapa[10] + 1;
         }
         gps.PosicionarRadar(mapa);
 
