@@ -781,7 +781,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
-                    x = (355 - bc.distance(1 - 1) - 50) * -1;
+                    x = (255 - bc.distance(1 - 1) - 50) * -1;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)), velocidadeGiro);
                 anguloFinal = matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90 - 45), 2);
@@ -802,7 +802,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
-                    x = 355 - bc.distance(1 - 1) - 50;
+                    x = 255 - bc.distance(1 - 1) - 50;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90)), velocidadeGiro);
 
@@ -826,7 +826,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90)), velocidadeGiro);
-                    x = (355 - bc.distance(1 - 1) - 50) * -1;
+                    x = (255 - bc.distance(1 - 1) - 50) * -1;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
 
@@ -849,7 +849,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90)), velocidadeGiro);
-                    x = 355 - bc.distance(1 - 1) - 50;
+                    x = 255 - bc.distance(1 - 1) - 50;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 180)), velocidadeGiro);
 
@@ -865,7 +865,7 @@ class gps
                 y = ultra1 - 50;
 
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 180)), velocidadeGiro);
-                x = 355 - bc.distance(1 - 1) - 50;
+                x = 255 - bc.distance(1 - 1) - 50;
 
                 if (y > 350)
                 {
@@ -886,7 +886,7 @@ class gps
                 y = (355 - ultra1 - 50) * -1;
 
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 180)), velocidadeGiro);
-                x = (355 - bc.distance(1 - 1) - 50) * -1;
+                x = (255 - bc.distance(1 - 1) - 50) * -1;
 
                 if (y > 350)
                 {
@@ -919,7 +919,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90)), velocidadeGiro);
-                    x = (355 - bc.distance(1 - 1) - 50) * -1;
+                    x = (255 - bc.distance(1 - 1) - 50) * -1;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
                 anguloFinal = matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 45), 2);
@@ -941,7 +941,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90)), velocidadeGiro);
-                    x = 355 - bc.distance(1 - 1) - 50;
+                    x = 255 - bc.distance(1 - 1) - 50;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 180)), velocidadeGiro);
                 anguloFinal = matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 45), 2);
@@ -967,7 +967,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 180)), velocidadeGiro);
-                    x = (355 - bc.distance(1 - 1) - 50) * -1;
+                    x = (255 - bc.distance(1 - 1) - 50) * -1;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90)), velocidadeGiro);
                 anguloFinal = matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 45), 2);
@@ -988,7 +988,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 180)), velocidadeGiro);
-                    x = 355 - bc.distance(1 - 1) - 50;
+                    x = 255 - bc.distance(1 - 1) - 50;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)), velocidadeGiro);
                 anguloFinal = matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 45), 2);
@@ -1010,7 +1010,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)), velocidadeGiro);
-                    x = 355 - bc.distance(1 - 1) - 50;
+                    x = 255 - bc.distance(1 - 1) - 50;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
                 anguloFinal = matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 45), 2);
@@ -1021,7 +1021,7 @@ class gps
                 y = (355 - ultra1 - 50) * -1;
 
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)), velocidadeGiro);
-                x = (355 - bc.distance(1 - 1) - 50) * -1;
+                x = (255 - bc.distance(1 - 1) - 50) * -1;
 
                 if (y > 350)
                 {
@@ -1057,7 +1057,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
-                    x = (355 - bc.distance(1 - 1) - 50) * -1;
+                    x = (255 - bc.distance(1 - 1) - 50) * -1;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)), velocidadeGiro);
                 anguloFinal = matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90 + 45), 2);
@@ -1078,7 +1078,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
-                    x = 355 - bc.distance(1 - 1) - 50;
+                    x = 255 - bc.distance(1 - 1) - 50;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90)), velocidadeGiro);
                 anguloFinal = matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90 + 45), 2);
@@ -1100,7 +1100,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)), velocidadeGiro);
-                    x = 355 - bc.distance(1 - 1) - 50;
+                    x = 255 - bc.distance(1 - 1) - 50;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2])), velocidadeGiro);
                 anguloFinal = matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90 + 45), 2);
@@ -1122,7 +1122,7 @@ class gps
                 if (x > 350)
                 {
                     mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 90)), velocidadeGiro);
-                    x = (355 - bc.distance(1 - 1) - 50) * -1;
+                    x = (255 - bc.distance(1 - 1) - 50) * -1;
                 }
                 mov.MoverProAngulo(matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] - 180)), velocidadeGiro);
                 anguloFinal = matAng.AproximarAngulo(matAng.MatematicaCirculo(mapa[2] + 90 + 45), 2);
